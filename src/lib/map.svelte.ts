@@ -137,11 +137,13 @@ export function adjustStandardStyle(map: MlMap) {
 // ---------- gespeicherte Einstellungen ----------
 
 const KEY = 'wander.map.v1';
-type Saved = { base: BaseId; trails: boolean; center: [number, number]; zoom: number };
+type Saved = { base: BaseId; trails: boolean; pois: boolean; diffColors: boolean; center: [number, number]; zoom: number };
 
 const DEFAULTS: Saved = {
   base: 'standard',
   trails: true,
+  pois: true,
+  diffColors: false,
   center: [8.4573, 50.2324], // Großer Feldberg
   zoom: 12,
 };

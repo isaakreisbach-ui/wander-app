@@ -4,6 +4,7 @@
   import SearchBox from './SearchBox.svelte';
   import PlanOverlay from './PlanOverlay.svelte';
   import RecordOverlay from './RecordOverlay.svelte';
+  import PoiOverlay from './PoiOverlay.svelte';
   import FlyoverBar from './FlyoverBar.svelte';
   import { flyover } from '../lib/flyover.svelte';
   import { onMount } from 'svelte';
@@ -117,6 +118,7 @@
 <div class="wrap">
   <div class="map" bind:this={container}></div>
 
+  <PoiOverlay />
   <PlanOverlay />
   <RecordOverlay />
   {#if flyover.active}<FlyoverBar />{/if}
@@ -142,6 +144,10 @@
         <button class="opt" class:sel={mapSettings.trails} onclick={toggleTrails}>
           <span class="check" aria-hidden="true">{mapSettings.trails ? '✓' : ''}</span>
           <span><b>Wanderwege</b><small>Waymarked Trails – nur online</small></span>
+        </button>
+        <button class="opt" class:sel={mapSettings.pois} onclick={() => { mapSettings.pois = !mapSettings.pois; saveMapSettings(); }}>
+          <span class="check" aria-hidden="true">{mapSettings.pois ? '✓' : ''}</span>
+          <span><b>💧 Wasser & 🏠 Hütten</b><small>OpenStreetMap – ab Zoomstufe 11</small></span>
         </button>
       </div>
     {/if}

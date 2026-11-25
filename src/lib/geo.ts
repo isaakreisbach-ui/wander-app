@@ -124,6 +124,40 @@ export function simplifyIndices(pts: Pt[], tolerance: number): number[] {
   return out;
 }
 
+export type GradeClass = 'easy' | 'medium' | 'hard';
+
+/** Grenzen in Prozent Steigung/Gefälle */
+export const GRADE_LIMITS = { medium: 10, hard: 20 };
+
+/**
+ * Steilheit je Routenpunkt (für das Stück bis zum nächsten Punkt), gemittelt über ~100 m,
+ * damit Höhen-Rauschen keine bunten Flecken erzeugt. null = keine Höhendaten.
+ */
+export function gradeClasses(pts: Pt[], cum: number[], window = 100): (GradeClass | null)[] {
+  const n = pts.length;
+  const out: (GradeClass | null)[] = new Array(n).fill(null);
+  let a = 0, b = 0;
+  for (let i = 0; i < n; i++) {
+    const mid = cum[i];
+    while (a < i && mid - cum[a + 1] >= window / 2) a++;
+    while (b < n - 1 && cum[b] - mid < window / 2) b++;
+    const ea = pts[a][2], eb = pts[b][2];
+    const d = cum[b] - cum[a];
+    if (ea === undefined || eb === undefined || d < 20) continue;
+    const g = (Math.abs(eb - ea) / d) * 100;
+    out[i] = g > GRADE_LIMITS.hard ? 'hard' : g > GRADE_LIMITS.medium ? 'medium' : 'easy';
+  }
+  // sehr kurze Ausreißer (< 40 m) an die Umgebung angleichen
+  for (let i = 1; i < n - 1; i++) {
+    if (out[i] !== out[i - 1]) {
+      let j = i;
+      while (j < n - 1 && out[j + 1] === out[i]) j++;
+      if (cum[j] - cum[i] < 40 && out[j + 1] === out[i - 1]) for (let k = i; k <= j; k++) out[k] = out[i - 1];
+    }
+  }
+  return out;
+}
+
 /**
  * Ist dieser Abschnitt eine Luftlinie (schnurgerade, also keinem Weg gefolgt)?
  * Echte Wege weichen fast immer um mehr als ein paar Meter von der Geraden ab.

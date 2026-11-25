@@ -2,7 +2,7 @@
 // Der Entwurf wird laufend im Gerät gespeichert, damit nach einem Neustart nichts fehlt.
 
 import {
-  cumulative, climb, walkingTimeHours, difficulty, maxGrade, anchorIndices, isStraight, type Pt,
+  cumulative, climb, walkingTimeHours, difficulty, maxGrade, anchorIndices, isStraight, gradeClasses, type Pt,
 } from './geo';
 import { routeSegment, straightSegment, RoutingError } from './routing';
 import { db, newTourId, type Tour, type TourStats, type Waypoint } from './db';
@@ -99,6 +99,8 @@ class Planner {
   get kind(): Tour['kind'] { return this.meta?.kind ?? 'plan'; }
 
   cum = $derived(cumulative(this.route));
+  /** Steilheit je Routenpunkt (für die farbige Anzeige) */
+  grades = $derived(gradeClasses(this.route, this.cum));
   /** Je Abschnitt: true = Luftlinie (kein Weg), false = folgt einem Weg */
   // (bei Aufzeichnungen nie – dort ist man die Strecke ja tatsächlich gegangen)
   straight = $derived(this.segmentPieces().map((p) => this.kind !== 'track' && isStraight(p)));

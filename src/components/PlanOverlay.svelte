@@ -3,8 +3,9 @@
   // Route, Wegpunkte (ziehbar), Klick zum Setzen, Rechtsklick-Menü, Markierung aus dem Höhenprofil.
   import { Marker, type MapMouseEvent, type GeoJSONSource, type Map as MlMap } from 'maplibre-gl';
   import type * as GeoJSON from 'geojson';
-  import { mapState, onStyleReady } from '../lib/map.svelte';
+  import { mapState, mapSettings, onStyleReady } from '../lib/map.svelte';
   import { planner } from '../lib/planner.svelte';
+  import { POI_LAYERS } from '../lib/poiPopup';
 
   const ROUTE = 'plan-route';
   const HOVER = 'plan-hover';
@@ -15,17 +16,33 @@
   let wpPopup = $state<{ id: string; x: number; y: number; label: string } | null>(null);
 
   function routeData(): GeoJSON.FeatureCollection {
-    // Je Abschnitt ein Stück – Luftlinien werden gestrichelt gezeichnet
-    const pieces = planner.segmentPieces();
+    // Je Abschnitt ein Stück – Luftlinien werden gestrichelt gezeichnet.
+    // Mit „Steilheit farbig“ wird jedes Stück zusätzlich nach Steigung unterteilt.
+    const r = planner.route;
     const straight = planner.straight;
-    return {
-      type: 'FeatureCollection',
-      features: pieces.filter((p) => p.length > 1).map((p, i) => ({
-        type: 'Feature',
-        properties: { straight: !!straight[i] },
-        geometry: { type: 'LineString', coordinates: p.map((q) => [q[0], q[1]]) },
-      })),
+    const grades = planner.grades;
+    const colored = mapSettings.diffColors;
+    const starts = planner.segStart.length ? planner.segStart : r.length > 1 ? [0] : [];
+    const features: GeoJSON.Feature[] = [];
+    const line = (from: number, to: number, props: Record<string, unknown>) => {
+      if (to <= from) return;
+      features.push({
+        type: 'Feature', properties: props,
+        geometry: { type: 'LineString', coordinates: r.slice(from, to + 1).map((q) => [q[0], q[1]]) },
+      });
     };
+    starts.forEach((from, s) => {
+      const to = s + 1 < starts.length ? starts[s + 1] : r.length - 1;
+      if (straight[s] || !colored) { line(from, to, { straight: !!straight[s], diff: null }); return; }
+      let runStart = from;
+      for (let i = from + 1; i <= to; i++) {
+        if (i === to || grades[i] !== grades[runStart]) {
+          line(runStart, i, { straight: false, diff: grades[runStart] });
+          runStart = i;
+        }
+      }
+    });
+    return { type: 'FeatureCollection', features };
   }
 
   function hoverData(): GeoJSON.FeatureCollection {
@@ -51,7 +68,12 @@
         id: 'plan-route-line', type: 'line', source: ROUTE,
         filter: ['!=', ['get', 'straight'], true],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#e5246b', 'line-width': 5 },
+        paint: {
+          // Grundfarbe einheitlich pink; mit „Steilheit farbig“: grün / orange / rot
+          'line-color': ['match', ['coalesce', ['get', 'diff'], 'none'],
+            'easy', '#34c759', 'medium', '#ff9500', 'hard', '#ff3b30', '#e5246b'],
+          'line-width': 5,
+        },
       });
       // Luftlinie (kein Weg): gestrichelt
       map.addLayer({
@@ -169,6 +191,9 @@
     const click = (e: MapMouseEvent) => {
       if (menu || wpPopup) { menu = null; wpPopup = null; return; }
       if (!planner.active || onMarker(e)) return;
+      // Tipp auf Wasserstelle/Hütte öffnet deren Info – kein neuer Routenpunkt
+      const poiLayers = POI_LAYERS.filter((l) => map.getLayer(l));
+      if (poiLayers.length && map.queryRenderedFeatures(e.point, { layers: poiLayers }).length) return;
       const idx = routeHitAt(map, e);
       if (idx !== null) planner.insert(planner.segmentOf(idx), e.lngLat.lng, e.lngLat.lat);
       else planner.add(e.lngLat.lng, e.lngLat.lat);

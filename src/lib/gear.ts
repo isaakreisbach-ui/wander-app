@@ -28,7 +28,8 @@ export type GearWeather = {
   hints: Hint[];
 };
 
-export function recommendGear(stats: TourStats, wx: GearWeather | null, date = new Date()): GearItem[] {
+/** `refills`: Kilometer, an denen es unterwegs Trinkwasser gibt */
+export function recommendGear(stats: TourStats, wx: GearWeather | null, refills: number[] = [], date = new Date()): GearItem[] {
   const items: GearItem[] = [];
   const add = (i: GearItem) => items.push(i);
   const km = stats.meters / 1000;
@@ -100,7 +101,14 @@ export function recommendGear(stats: TourStats, wx: GearWeather | null, date = n
   // ---------- Essen & Trinken ----------
   let water = Math.max(0.5, Math.round(hours * 0.5 * 2) / 2);
   if (wx && wx.tMax >= 25) water = Math.round(water * 1.5 * 2) / 2;
-  add({ id: 'water', icon: '💧', name: `Wasser: ca. ${water.toLocaleString('de-DE')} l`, why: wx && wx.tMax >= 25 ? `Warm (${Math.round(wx.tMax)} °C) – mehr trinken` : '½ l pro Stunde Gehzeit', level: 'must', group: 'Essen & Trinken' });
+  let waterWhy = wx && wx.tMax >= 25 ? `Warm (${Math.round(wx.tMax)} °C) – mehr trinken` : '½ l pro Stunde Gehzeit';
+  if (refills.length) {
+    // Mit Nachfüllmöglichkeit reicht weniger – aber mindestens 1 l
+    water = Math.max(1, Math.round((water / (refills.length + 1)) * 1.3 * 2) / 2);
+    const list = refills.slice(0, 3).map((k) => k.toLocaleString('de-DE', { maximumFractionDigits: 1 })).join(', ');
+    waterWhy = `Nachfüllen möglich bei km ${list}${refills.length > 3 ? ' …' : ''}`;
+  }
+  add({ id: 'water', icon: '💧', name: `Wasser: ca. ${water.toLocaleString('de-DE')} l`, why: waterWhy, level: 'must', group: 'Essen & Trinken' });
   if (hours >= 2) {
     add({ id: 'food', icon: '🥪', name: hours > 4 ? 'Proviant (Brotzeit + Snacks)' : 'Snacks (Riegel, Nüsse, Obst)', why: `${km.toLocaleString('de-DE', { maximumFractionDigits: 1 })} km – Energie nachlegen`, level: hours > 4 ? 'must' : 'recommended', group: 'Essen & Trinken' });
   }

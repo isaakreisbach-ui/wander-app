@@ -3,10 +3,15 @@
   import { recommendGear, GROUPS, type GearItem } from '../lib/gear';
   import { wxShared } from '../lib/wxshared.svelte';
   import type { TourStats } from '../lib/db';
+  import { planner } from '../lib/planner.svelte';
+  import { poiState, poisAlongRoute } from '../lib/pois.svelte';
 
   let { stats, tourKey }: { stats: TourStats; tourKey: string } = $props();
 
-  const items = $derived(recommendGear(stats, wxShared.current));
+  const refills = $derived(
+    poisAlongRoute(planner.route, planner.cum, poiState.pois).filter((p) => p.kind === 'water' && p.drink === 'yes').map((p) => p.km),
+  );
+  const items = $derived(recommendGear(stats, wxShared.current, refills));
   const wxDay = $derived(wxShared.current?.day.date ?? null);
 
   // Abgehakte Dinge pro Tour merken (Packliste)

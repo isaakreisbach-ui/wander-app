@@ -18,7 +18,18 @@
   import WeatherCard from '../components/WeatherCard.svelte';
   import OfflineTourCard from '../components/OfflineTourCard.svelte';
   import GearCard from '../components/GearCard.svelte';
+  import RoutePoisCard from '../components/RoutePoisCard.svelte';
   import { flyover } from '../lib/flyover.svelte';
+  import { mapSettings, saveMapSettings } from '../lib/map.svelte';
+
+  // Anteil der Strecke je Steilheit (in km)
+  const gradeShare = $derived.by(() => {
+    const g = planner.grades, c = planner.cum;
+    const m = { easy: 0, medium: 0, hard: 0 };
+    for (let i = 0; i < g.length - 1; i++) { const k = g[i]; if (k) m[k] += c[i + 1] - c[i]; }
+    const f = (v: number) => `${(v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1, minimumFractionDigits: 1 })} km`;
+    return { easy: f(m.easy), medium: f(m.medium), hard: f(m.hard) };
+  });
 
   function start3d() {
     if (!navigator.onLine) {
@@ -142,6 +153,21 @@
     <div class="card profile-card">
       <ElevationProfile route={planner.route} cum={planner.cum} bind:hover={planner.hover} height={coarse ? 120 : 160} />
     </div>
+    <div class="steep">
+      <label class="ios-row">
+        <span class="lbl"><b>Steilheit farbig</b><small>Route nach Steigung einfärben</small></span>
+        <input type="checkbox" class="ios-switch" checked={mapSettings.diffColors}
+          onchange={(e) => { mapSettings.diffColors = e.currentTarget.checked; saveMapSettings(); }} />
+      </label>
+      {#if mapSettings.diffColors}
+        <div class="legend3">
+          <span><i style="background:#34c759"></i>leicht &lt; 10 % <b>{gradeShare.easy}</b></span>
+          <span><i style="background:#ff9500"></i>mittel 10–20 % <b>{gradeShare.medium}</b></span>
+          <span><i style="background:#ff3b30"></i>steil &gt; 20 % <b>{gradeShare.hard}</b></span>
+        </div>
+        <p class="tiny">Berechnet aus Steigung bzw. Gefälle (über 100 m gemittelt). Wegbeschaffenheit wie Geröll oder Kletterstellen ist nicht enthalten.</p>
+      {/if}
+    </div>
     <button class="btn secondary fly" onclick={start3d} disabled={planner.routing || flyover.active}>
       🎥 {flyover.active ? '3D-Flug läuft …' : '3D-Flug über die Tour'}
     </button>
@@ -159,6 +185,7 @@
   {#if planner.route.length > 1 && !planner.routing}
     <WeatherCard route={planner.route} />
     {#if planner.stats}<GearCard stats={planner.stats} tourKey={planner.tourId ?? 'entwurf'} />{/if}
+    <RoutePoisCard />
     <OfflineTourCard route={planner.route} tourId={planner.tourId} name={planner.name || defaultTourName()} />
   {/if}
 
@@ -193,7 +220,27 @@
   .error { color: var(--warn); background: #fff4e0; border-radius: 10px; padding: 8px 10px; font-size: .9rem; }
 
   .profile-card { padding: 8px 6px 4px; }
-  .fly { width: 100%; margin: -4px 0 12px; }
+  .fly { width: 100%; margin: 0 0 12px; }
+  .steep { background: #fff; border-radius: 16px; padding: 4px 14px; margin: -4px 0 10px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05); }
+  .ios-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; cursor: pointer; }
+  .lbl { display: flex; flex-direction: column; }
+  .lbl b { font-weight: 600; font-size: .98rem; }
+  .lbl small { color: #8e8e93; font-size: .8rem; }
+  .ios-switch {
+    appearance: none; -webkit-appearance: none; flex: none; position: relative;
+    width: 51px; height: 31px; border-radius: 999px; background: #e9e9eb; transition: background .2s; cursor: pointer; margin: 0;
+  }
+  .ios-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .2); transition: transform .2s;
+  }
+  .ios-switch:checked { background: #34c759; }
+  .ios-switch:checked::after { transform: translateX(20px); }
+  .legend3 { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; padding: 2px 0 6px; }
+  .legend3 span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend3 i { width: 18px; height: 5px; border-radius: 3px; display: inline-block; }
+  .legend3 b { font-weight: 600; color: #3a3a3c; }
+  .tiny { font-size: .72rem; color: #8e8e93; margin: 0 0 8px; }
   .legend { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; background: #fff4e0; border-radius: 10px; padding: 8px 10px; }
   .dash {
     flex: none; width: 34px; height: 5px; margin-top: 7px;

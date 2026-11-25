@@ -24,6 +24,7 @@
     "dexie": "^4.4.7",
     "jsqr": "^1.4.0",
     "maplibre-gl": "^6.19.0",
+    "opening_hours": "^3.16.0",
     "qrcode": "^1.5.4",
     "uplot": "^1.6.32"
   }
