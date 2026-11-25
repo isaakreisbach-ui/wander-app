@@ -2,6 +2,7 @@
   import { Map as MlMap, NavigationControl, GeolocateControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
   import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
   import SearchBox from './SearchBox.svelte';
+  import PlanOverlay from './PlanOverlay.svelte';
   import { onMount } from 'svelte';
   import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -104,6 +105,8 @@
 
 <div class="wrap">
   <div class="map" bind:this={container}></div>
+
+  <PlanOverlay />
 
   <div class="search-slot"><SearchBox /></div>
 

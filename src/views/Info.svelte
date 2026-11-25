@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.2.1 – Karte mit Satellit und Suche<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.3 – Touren planen<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>

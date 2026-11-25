@@ -5,6 +5,7 @@
   import Aufzeichnen from './views/Aufzeichnen.svelte';
   import Info from './views/Info.svelte';
   import { requestPersistentStorage } from './lib/status.svelte';
+  import { planner } from './lib/planner.svelte';
 
   type View = 'karte' | 'planen' | 'touren' | 'aufzeichnen' | 'info';
   const tabs: { id: View; label: string; icon: string; mobileOnly?: boolean }[] = [
@@ -22,6 +23,11 @@
 
   // Am PC gibt es keinen eigenen „Karte“-Bereich – die Karte ist immer sichtbar.
   const panelView = $derived<View>(view === 'karte' && desktop ? 'planen' : view);
+
+  // Nur im Bereich „Planen“ setzt ein Klick in die Karte Punkte
+  $effect(() => {
+    planner.active = panelView === 'planen';
+  });
 
   $effect(() => {
     const on = () => (online = true);
@@ -66,7 +72,7 @@
   </nav>
 
   {#if panelView !== 'karte'}
-    <section class="panel">
+    <section class="panel" class:compact={panelView === 'planen'}>
       <button class="sheet-close" onclick={() => (view = 'karte')} aria-label="Zur Karte">
         <span class="grip" aria-hidden="true"></span>
         <span>Karte zeigen ▾</span>
@@ -109,6 +115,10 @@
     border-radius: 18px 18px 0 0;
     box-shadow: 0 -4px 18px rgba(0, 0, 0, .18);
     padding: 0 14px 14px;
+  }
+  /* Beim Planen auf dem Handy bleibt mehr Karte sichtbar */
+  @media (max-width: 899px) {
+    .panel.compact { max-height: 46%; }
   }
   .sheet-close {
     position: sticky; top: 0; z-index: 1;
