@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { fromHere, closeFromHere, FH_COLORS, type PeakOption, type HikeOption } from '../lib/fromhere.svelte';
+  import { fromHere, closeFromHere, FH_COLORS, toggleCategory, visible, type PeakOption, type HikeOption } from '../lib/fromhere.svelte';
+  import { CATEGORY_STYLE, type RouteCategory } from '../lib/alpine.svelte';
+
+  const CATS: RouteCategory[] = ['wander', 'alpine', 'via_ferrata', 'glacier'];
+  const count = (c: RouteCategory) => Object.values(fromHere.cats).filter((x) => x.cat === c).length;
+  const hiddenCount = $derived(
+    fromHere.peaks.filter((p) => !visible(`p:${p.id}`)).length + fromHere.hikes.filter((h) => !visible(`h:${h.id}`)).length,
+  );
   import { planner, tourFromTrack } from '../lib/planner.svelte';
   import { confirmDiscard, fitRoute, openTour } from '../lib/tours';
   import { correctElevation } from '../lib/recorder.svelte';
@@ -51,6 +58,16 @@
     <button class="x" onclick={closeFromHere} aria-label="Schließen">✕</button>
   </div>
 
+  <div class="chips" role="group" aria-label="Kategorien ein- und ausblenden">
+    {#each CATS as c}
+      <button class="chip" class:off={!fromHere.show[c]} style:--c={CATEGORY_STYLE[c].color} aria-pressed={fromHere.show[c]} onclick={() => toggleCategory(c)}>
+        {CATEGORY_STYLE[c].icon} {CATEGORY_STYLE[c].label}{fromHere.catStatus === 'done' ? ` (${count(c)})` : ''}
+      </button>
+    {/each}
+  </div>
+  {#if fromHere.catStatus === 'loading'}<p class="status small"><span class="spin"></span>Prüfe auf Klettersteige und Gletscher …</p>{/if}
+  {#if hiddenCount}<p class="note">{hiddenCount} Vorschläge ausgeblendet.</p>{/if}
+
   <h4>⛰️ Gipfel</h4>
   {#if fromHere.peakStatus === 'loading' && !fromHere.peaks.length}
     <p class="status"><span class="spin"></span>{fromHere.peakMsg}</p>
@@ -60,6 +77,8 @@
   {#if fromHere.peaks.length}
     <ul class="list">
       {#each fromHere.peaks as p, i (p.id)}
+        {@const cat = fromHere.cats[`p:${p.id}`]}
+        {#if visible(`p:${p.id}`)}
         <li class:sel={isSel('peak', p.id)}>
           <button class="main" onclick={() => select('peak', p.id, p.route)}>
             <span class="dot" style:background={FH_COLORS[i % FH_COLORS.length]}></span>
@@ -67,6 +86,7 @@
               <span class="name">{p.name}{p.ele ? ` · ${p.ele} m` : ''}</span>
               <span class="sub">{formatDistance(p.meters)} · ↗ {Math.round(p.up)} m · ⏱ {formatDuration(p.hoursUp)} hoch</span>
               <span class="sub">Hin & zurück: {formatDuration(p.hoursRound)}</span>
+              {#if cat}<span class="cat" style:--c={CATEGORY_STYLE[cat.cat].color}>{CATEGORY_STYLE[cat.cat].icon} {CATEGORY_STYLE[cat.cat].label}{cat.grade ? ` ${cat.grade}` : ''}</span>{/if}
             </span>
             <span class="diff {p.difficulty}">{DIFF[p.difficulty]}</span>
           </button>
@@ -74,6 +94,7 @@
             <div class="detail"><button class="btn" onclick={() => adoptPeak(p)}>Diese Tour übernehmen</button></div>
           {/if}
         </li>
+        {/if}
       {/each}
     </ul>
     {#if fromHere.peakStatus === 'loading'}<p class="status small"><span class="spin"></span>{fromHere.peakMsg}</p>{/if}
@@ -88,6 +109,8 @@
   {#if fromHere.hikes.length}
     <ul class="list">
       {#each fromHere.hikes as h (h.id)}
+        {@const cat = fromHere.cats[`h:${h.id}`]}
+        {#if visible(`h:${h.id}`)}
         <li class:sel={isSel('hike', h.id)}>
           <button class="main" onclick={() => select('hike', h.id, h.route)}>
             <span class="dot hike"></span>
@@ -95,6 +118,7 @@
               <span class="name">{h.name}{h.ref && !h.name.includes(h.ref) ? ` (${h.ref})` : ''}</span>
               <span class="sub">{formatDistance(h.length)} · {h.loop ? 'Rundweg' : 'Streckenwanderung'} · {GROUP[h.group] ?? ''}</span>
               <span class="sub">{h.near < 50 ? 'Führt direkt hier vorbei' : `${formatDistance(h.near)} entfernt`}{h.itinerary ? ` · ${h.itinerary}` : ''}</span>
+              {#if cat}<span class="cat" style:--c={CATEGORY_STYLE[cat.cat].color}>{CATEGORY_STYLE[cat.cat].icon} {CATEGORY_STYLE[cat.cat].label}{cat.grade ? ` ${cat.grade}` : ''}</span>{/if}
             </span>
             <span class="chev" aria-hidden="true">›</span>
           </button>
@@ -105,6 +129,7 @@
             </div>
           {/if}
         </li>
+        {/if}
       {/each}
     </ul>
     {#if fromHere.hikeStatus === 'loading'}<p class="status small"><span class="spin"></span>{fromHere.hikeMsg}</p>{/if}
@@ -142,4 +167,14 @@
   .detail .btn { width: 100%; background: #007aff; border-color: #007aff; border-radius: 12px; }
   .more { color: #007aff; font-size: .85rem; text-decoration: none; }
   .note { font-size: .75rem; color: #8e8e93; margin: 8px 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+  .chip {
+    border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 14%, #fff); color: #1c1c1e;
+    border-radius: 999px; padding: 5px 11px; font-size: .8rem; font-weight: 600;
+  }
+  .chip.off { background: #fff; border-color: #d1d1d6; color: #8e8e93; text-decoration: line-through; }
+  .cat {
+    align-self: flex-start; margin-top: 3px; font-size: .7rem; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+    color: var(--c); background: color-mix(in srgb, var(--c) 12%, #fff);
+  }
 </style>

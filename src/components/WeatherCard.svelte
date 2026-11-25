@@ -98,6 +98,7 @@
       precip: Math.max(...ds.map((x) => x.precip)),
       precipProb: Math.max(...ds.map((x) => x.precipProb ?? 0)),
       hints,
+      hours: w.places.map((p) => p.hours.filter((h) => h.time.startsWith(d))),
     };
   });
   $effect(() => () => { wxShared.current = null; });

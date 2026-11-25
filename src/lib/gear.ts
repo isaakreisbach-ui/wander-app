@@ -3,7 +3,7 @@
 // Das sind Faustregeln, keine Garantie – sie ersetzen nicht den eigenen Blick aufs Gelände.
 
 import type { TourStats } from './db';
-import type { DayForecast, Hint } from './weather';
+import type { DayForecast, Hint, HourForecast } from './weather';
 
 export type GearLevel = 'must' | 'recommended' | 'optional';
 export type GearGroup = 'Kleidung' | 'Ausrüstung' | 'Essen & Trinken' | 'Sicherheit';
@@ -26,12 +26,36 @@ export type GearWeather = {
   precip: number;
   precipProb: number | null;
   hints: Hint[];
+  /** Stundenwerte des Tages (je Ort: Start, ggf. Gipfel) – für die Startzeit-Empfehlung */
+  hours?: HourForecast[][];
 };
 
-/** `refills`: Kilometer, an denen es unterwegs Trinkwasser gibt */
-export function recommendGear(stats: TourStats, wx: GearWeather | null, refills: number[] = [], date = new Date()): GearItem[] {
+export type AlpineInfo = { viaFerrata: boolean; vfGrade: string; glacier: boolean; alpine: boolean; alpineGrade: string };
+
+/** `refills`: Kilometer, an denen es unterwegs Trinkwasser gibt; `alp`: alpine Abschnitte der Route */
+export function recommendGear(stats: TourStats, wx: GearWeather | null, refills: number[] = [], alp: AlpineInfo | null = null, date = new Date()): GearItem[] {
   const items: GearItem[] = [];
   const add = (i: GearItem) => items.push(i);
+
+  // ---------- Klettersteig / Gletscher / alpin (zuerst – das Wichtigste) ----------
+  if (alp?.viaFerrata) {
+    const g = alp.vfGrade ? ` (Schwierigkeit ${alp.vfGrade})` : '';
+    add({ id: 'vf-set', icon: '🧗', name: 'Klettersteigset (nach EN 958)', why: `Klettersteig auf der Route${g}`, level: 'must', group: 'Ausrüstung' });
+    add({ id: 'harness', icon: '🪢', name: 'Klettergurt', why: 'Für das Klettersteigset', level: 'must', group: 'Ausrüstung' });
+    add({ id: 'helmet', icon: '⛑️', name: 'Kletterhelm', why: 'Steinschlag am Klettersteig', level: 'must', group: 'Ausrüstung' });
+    add({ id: 'vf-gloves', icon: '🧤', name: 'Klettersteighandschuhe', why: 'Schutz am Stahlseil', level: 'recommended', group: 'Kleidung' });
+  }
+  if (alp?.glacier) {
+    add({ id: 'crampons', icon: '🦶', name: 'Steigeisen (passend zum Schuh)', why: 'Route führt über einen Gletscher', level: 'must', group: 'Ausrüstung' });
+    add({ id: 'axe', icon: '⛏️', name: 'Eispickel', why: 'Gletscher', level: 'must', group: 'Ausrüstung' });
+    add({ id: 'rope', icon: '🪢', name: 'Seil, Gurt & Spaltenbergungs-Material', why: 'Spaltengefahr – nur in Seilschaft', level: 'must', group: 'Sicherheit' });
+    add({ id: 'guide', icon: '🧑‍🏫', name: 'Erfahrung oder Bergführer', why: 'Gletscher nie allein und ohne Kenntnisse begehen', level: 'must', group: 'Sicherheit' });
+    add({ id: 'glacier-glasses', icon: '🕶️', name: 'Gletscherbrille (Kategorie 4)', why: 'Starke Blendung auf Schnee und Eis', level: 'must', group: 'Ausrüstung' });
+    if (!items.some((i) => i.id === 'helmet')) add({ id: 'helmet', icon: '⛑️', name: 'Helm', why: 'Steinschlag / Spaltensturz', level: 'recommended', group: 'Ausrüstung' });
+  }
+  if (alp?.alpine && !items.some((i) => i.id === 'helmet')) {
+    add({ id: 'helmet', icon: '⛑️', name: 'Helm', why: `Alpiner Steig${alp.alpineGrade ? ` ${alp.alpineGrade}` : ''} – Steinschlag möglich`, level: 'recommended', group: 'Ausrüstung' });
+  }
   const km = stats.meters / 1000;
   const hours = stats.hours;
   const up = stats.up;
@@ -44,7 +68,9 @@ export function recommendGear(stats: TourStats, wx: GearWeather | null, refills:
   const has = (key: string) => wx?.hints.some((h) => h.text.toLowerCase().includes(key)) ?? false;
 
   // ---------- Kleidung ----------
-  if (hard || alpine || up > 600) {
+  if (alp?.glacier) {
+    add({ id: 'boots', icon: '🥾', name: 'Steigeisenfeste Bergstiefel (Kat. B/C)', why: 'Nötig für Steigeisen auf dem Gletscher', level: 'must', group: 'Kleidung' });
+  } else if (hard || alpine || up > 600 || alp?.viaFerrata || alp?.alpine) {
     add({ id: 'boots', icon: '🥾', name: 'Knöchelhohe Wanderschuhe', why: alpine ? 'Alpines Gelände, oft steinig' : `${Math.round(up)} Hm – guter Halt bergab`, level: 'must', group: 'Kleidung' });
   } else {
     add({ id: 'boots', icon: '👟', name: 'Wander- oder Trailschuhe', why: 'Feste Sohle mit Profil reicht hier', level: 'must', group: 'Kleidung' });

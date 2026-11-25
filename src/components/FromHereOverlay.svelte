@@ -3,7 +3,8 @@
   import { Marker, type GeoJSONSource } from 'maplibre-gl';
   import type * as GeoJSON from 'geojson';
   import { mapState, onStyleReady } from '../lib/map.svelte';
-  import { fromHere, FH_COLORS } from '../lib/fromhere.svelte';
+  import { fromHere, FH_COLORS, visible } from '../lib/fromhere.svelte';
+  import { CATEGORY_STYLE } from '../lib/alpine.svelte';
 
   const SRC = 'from-here';
 
@@ -13,14 +14,19 @@
     const line = (coords: number[][], props: Record<string, unknown>): GeoJSON.Feature => ({
       type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: coords },
     });
+    // Klettersteig / Gletscher / alpin in ihrer Kategorie-Farbe, sonst normale Farbe
+    const catColor = (key: string, normal: string) => {
+      const c = fromHere.cats[key]?.cat;
+      return c && c !== 'wander' ? CATEGORY_STYLE[c].color : normal;
+    };
     return {
       type: 'FeatureCollection',
       features: [
-        ...fromHere.hikes.map((h) => line(h.route.map((p) => [p[0], p[1]]), {
-          color: '#1d7a3e', sel: sel?.type === 'hike' && sel.id === h.id, hike: true,
+        ...fromHere.hikes.filter((h) => visible(`h:${h.id}`)).map((h) => line(h.route.map((p) => [p[0], p[1]]), {
+          color: catColor(`h:${h.id}`, '#1d7a3e'), sel: sel?.type === 'hike' && sel.id === h.id, hike: true,
         })),
-        ...fromHere.peaks.map((p, i) => line(p.route.map((q) => [q[0], q[1]]), {
-          color: FH_COLORS[i % FH_COLORS.length], sel: sel?.type === 'peak' && sel.id === p.id, hike: false,
+        ...fromHere.peaks.map((p, i) => ({ p, i })).filter(({ p }) => visible(`p:${p.id}`)).map(({ p, i }) => line(p.route.map((q) => [q[0], q[1]]), {
+          color: catColor(`p:${p.id}`, FH_COLORS[i % FH_COLORS.length]), sel: sel?.type === 'peak' && sel.id === p.id, hike: false,
         })),
       ],
     };

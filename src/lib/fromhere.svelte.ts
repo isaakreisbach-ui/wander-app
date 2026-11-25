@@ -5,6 +5,7 @@
 import { overpass } from './overpass';
 import { routeSegment } from './routing';
 import { distance, cumulative, climb, walkingTimeHours, difficulty, maxGrade, type Pt, type Difficulty } from './geo';
+import { analyzeMany, categoryOf, type RouteCategory } from './alpine.svelte';
 
 export type PeakOption = {
   id: string; name: string; ele?: number; lng: number; lat: number;
@@ -27,28 +28,71 @@ export const fromHere = $state<{
   peaks: PeakOption[];
   hikes: HikeOption[];
   selected: { type: 'peak' | 'hike'; id: string | number } | null;
-}>({ point: null, peakStatus: 'idle', hikeStatus: 'idle', peakMsg: '', hikeMsg: '', peaks: [], hikes: [], selected: null });
+  /** Kategorie je Vorschlag ('p:<id>' / 'h:<id>') – kommt nach, sobald geprüft */
+  cats: Record<string, { cat: RouteCategory; grade: string }>;
+  catStatus: 'idle' | 'loading' | 'done' | 'error';
+  /** Welche Kategorien angezeigt werden (an/aus) */
+  show: Record<RouteCategory, boolean>;
+}>({
+  point: null, peakStatus: 'idle', hikeStatus: 'idle', peakMsg: '', hikeMsg: '', peaks: [], hikes: [], selected: null,
+  cats: {}, catStatus: 'idle',
+  show: (() => {
+    try { return { wander: true, alpine: true, via_ferrata: true, glacier: true, ...JSON.parse(localStorage.getItem('wander.fh.show') || '{}') }; }
+    catch { return { wander: true, alpine: true, via_ferrata: true, glacier: true }; }
+  })(),
+});
+
+export function toggleCategory(c: RouteCategory) {
+  fromHere.show[c] = !fromHere.show[c];
+  localStorage.setItem('wander.fh.show', JSON.stringify(fromHere.show));
+}
+
+/** Ist dieser Vorschlag nach den Schaltern sichtbar? (Ungeprüfte gelten als Wanderweg) */
+export function visible(key: string) {
+  const c = fromHere.cats[key]?.cat ?? 'wander';
+  return fromHere.show[c];
+}
+
+async function classify(signal: AbortSignal) {
+  const items = [
+    ...fromHere.peaks.map((p) => ({ key: `p:${p.id}`, route: p.route })),
+    ...fromHere.hikes.map((h) => ({ key: `h:${h.id}`, route: h.route })),
+  ];
+  if (!items.length) return;
+  fromHere.catStatus = 'loading';
+  try {
+    const res = await analyzeMany(items.map((i) => i.route), signal);
+    const cats: typeof fromHere.cats = {};
+    items.forEach((it, i) => (cats[it.key] = categoryOf(res[i])));
+    fromHere.cats = cats;
+    fromHere.catStatus = 'done';
+  } catch (e) {
+    if ((e as Error).name !== 'AbortError') fromHere.catStatus = 'error';
+  }
+}
 
 let abort: AbortController | null = null;
 
 export function closeFromHere() {
   abort?.abort();
-  Object.assign(fromHere, { point: null, peaks: [], hikes: [], selected: null, peakStatus: 'idle', hikeStatus: 'idle' });
+  Object.assign(fromHere, { point: null, peaks: [], hikes: [], selected: null, peakStatus: 'idle', hikeStatus: 'idle', cats: {}, catStatus: 'idle' });
 }
 
 export function openFromHere(lng: number, lat: number) {
   abort?.abort();
   const ctrl = (abort = new AbortController());
   Object.assign(fromHere, {
-    point: { lng, lat }, peaks: [], hikes: [], selected: null,
+    point: { lng, lat }, peaks: [], hikes: [], selected: null, cats: {}, catStatus: 'idle',
     peakStatus: 'loading', hikeStatus: 'loading', peakMsg: 'Suche Gipfel …', hikeMsg: 'Suche Wanderungen …',
   });
   if (!navigator.onLine) {
     Object.assign(fromHere, { peakStatus: 'error', hikeStatus: 'error', peakMsg: 'Dafür wird Internet benötigt.', hikeMsg: '' });
     return;
   }
-  loadPeaks(lng, lat, ctrl.signal);
-  loadHikes(lng, lat, ctrl.signal);
+  // Wenn beides geladen ist: alle Vorschläge auf Klettersteig/Gletscher/alpin prüfen (eine Abfrage)
+  Promise.all([loadPeaks(lng, lat, ctrl.signal), loadHikes(lng, lat, ctrl.signal)]).then(() => {
+    if (!ctrl.signal.aborted) classify(ctrl.signal);
+  });
 }
 
 // ---------- Gipfel ----------

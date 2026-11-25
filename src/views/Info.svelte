@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.13 – „Was geht von hier aus?“<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.14 – Klettersteige, Gletscher &amp; Startzeit<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>

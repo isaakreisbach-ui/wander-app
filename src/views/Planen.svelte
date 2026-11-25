@@ -18,6 +18,8 @@
   import WeatherCard from '../components/WeatherCard.svelte';
   import OfflineTourCard from '../components/OfflineTourCard.svelte';
   import GearCard from '../components/GearCard.svelte';
+  import AlpineCard from '../components/AlpineCard.svelte';
+  import StartTimeCard from '../components/StartTimeCard.svelte';
   import RoutePoisCard from '../components/RoutePoisCard.svelte';
   import { flyover } from '../lib/flyover.svelte';
   import { mapSettings, saveMapSettings } from '../lib/map.svelte';
@@ -183,7 +185,9 @@
   </div>
 
   {#if planner.route.length > 1 && !planner.routing}
+    <AlpineCard />
     <WeatherCard route={planner.route} />
+    {#if planner.stats}<StartTimeCard stats={planner.stats} />{/if}
     {#if planner.stats}<GearCard stats={planner.stats} tourKey={planner.tourId ?? 'entwurf'} />{/if}
     <RoutePoisCard />
     <OfflineTourCard route={planner.route} tourId={planner.tourId} name={planner.name || defaultTourName()} />

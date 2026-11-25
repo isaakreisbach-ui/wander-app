@@ -5,13 +5,15 @@
   import type { TourStats } from '../lib/db';
   import { planner } from '../lib/planner.svelte';
   import { poiState, poisAlongRoute } from '../lib/pois.svelte';
+  import { alpineState, alpineSummary } from '../lib/alpine.svelte';
 
   let { stats, tourKey }: { stats: TourStats; tourKey: string } = $props();
 
   const refills = $derived(
     poisAlongRoute(planner.route, planner.cum, poiState.pois).filter((p) => p.kind === 'water' && p.drink === 'yes').map((p) => p.km),
   );
-  const items = $derived(recommendGear(stats, wxShared.current, refills));
+  const alp = $derived(alpineState.status === 'done' && alpineState.sections.length ? alpineSummary(alpineState.sections) : null);
+  const items = $derived(recommendGear(stats, wxShared.current, refills, alp));
   const wxDay = $derived(wxShared.current?.day.date ?? null);
 
   // Abgehakte Dinge pro Tour merken (Packliste)
