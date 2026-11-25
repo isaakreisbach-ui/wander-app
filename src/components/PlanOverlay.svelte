@@ -15,12 +15,16 @@
   let wpPopup = $state<{ id: string; x: number; y: number; label: string } | null>(null);
 
   function routeData(): GeoJSON.FeatureCollection {
-    const r = planner.route;
+    // Je Abschnitt ein Stück – Luftlinien werden gestrichelt gezeichnet
+    const pieces = planner.segmentPieces();
+    const straight = planner.straight;
     return {
       type: 'FeatureCollection',
-      features: r.length > 1
-        ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.map((p) => [p[0], p[1]]) } }]
-        : [],
+      features: pieces.filter((p) => p.length > 1).map((p, i) => ({
+        type: 'Feature',
+        properties: { straight: !!straight[i] },
+        geometry: { type: 'LineString', coordinates: p.map((q) => [q[0], q[1]]) },
+      })),
     };
   }
 
@@ -45,8 +49,16 @@
       });
       map.addLayer({
         id: 'plan-route-line', type: 'line', source: ROUTE,
+        filter: ['!=', ['get', 'straight'], true],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#e5246b', 'line-width': 5 },
+      });
+      // Luftlinie (kein Weg): gestrichelt
+      map.addLayer({
+        id: 'plan-route-straight', type: 'line', source: ROUTE,
+        filter: ['==', ['get', 'straight'], true],
+        layout: { 'line-cap': 'butt', 'line-join': 'round' },
+        paint: { 'line-color': '#e5246b', 'line-width': 4, 'line-dasharray': [1.6, 1.4] },
       });
       map.addLayer({
         id: HIT, type: 'line', source: ROUTE,

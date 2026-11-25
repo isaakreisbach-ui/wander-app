@@ -16,6 +16,7 @@
   }
   import ElevationProfile from '../components/ElevationProfile.svelte';
   import WeatherCard from '../components/WeatherCard.svelte';
+  import OfflineTourCard from '../components/OfflineTourCard.svelte';
 
   const coarse = window.matchMedia('(pointer: coarse)').matches;
   const s = $derived(planner.stats);
@@ -116,6 +117,14 @@
   {/if}
 
   {#if planner.error}<p class="error" role="alert">{planner.error}</p>{/if}
+  {#if planner.straight.some(Boolean)}
+    <p class="legend">
+      <span class="dash" aria-hidden="true"></span>
+      <span><b>Gestrichelt = Luftlinie</b> – dort gibt es laut Karte keinen Weg
+        ({planner.straight.filter(Boolean).length} von {planner.straight.length} Abschnitten).
+        Durchgezogen = folgt einem echten Weg.</span>
+    </p>
+  {/if}
 
   {#if planner.route.length > 1}
     <div class="card profile-card">
@@ -134,6 +143,7 @@
 
   {#if planner.route.length > 1 && !planner.routing}
     <WeatherCard route={planner.route} />
+    <OfflineTourCard route={planner.route} tourId={planner.tourId} name={planner.name || defaultTourName()} />
   {/if}
 
   <label class="switch">
@@ -167,6 +177,11 @@
   .error { color: var(--warn); background: #fff4e0; border-radius: 10px; padding: 8px 10px; font-size: .9rem; }
 
   .profile-card { padding: 8px 6px 4px; }
+  .legend { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; background: #fff4e0; border-radius: 10px; padding: 8px 10px; }
+  .dash {
+    flex: none; width: 34px; height: 5px; margin-top: 7px;
+    background: repeating-linear-gradient(90deg, #e5246b 0 7px, transparent 7px 12px);
+  }
 
   .savebar { display: flex; gap: 8px; margin-bottom: 4px; }
   .name {

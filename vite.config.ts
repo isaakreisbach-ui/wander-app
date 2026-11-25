@@ -39,6 +39,48 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,mjs,css,html,svg,png,ico,webmanifest}'],
         navigateFallback: BASE + 'index.html',
+        runtimeCaching: [
+          {
+            // OpenFreeMap (Standard-Karte): Kacheln, Stil, Schriften, Symbole – offline nutzbar.
+            // Diese Funktion wird 1:1 in den Service Worker kopiert und muss daher in sich geschlossen sein.
+            urlPattern: ({ url }) => url.origin === 'https://tiles.openfreemap.org',
+            handler: async ({ request }) => {
+              const url = new URL(request.url);
+              const tile = url.pathname.match(/\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+              if (tile) {
+                // Kachel-Adressen enthalten eine Versionsnummer, die sich wöchentlich ändert →
+                // unter einer versionsfreien Adresse speichern und suchen.
+                const key = `https://tiles.openfreemap.org/__tile/${tile[1]}/${tile[2]}/${tile[3]}.pbf`;
+                const hit = await caches.match(key);
+                if (hit) return hit;
+                try {
+                  const res = await fetch(request);
+                  if (res.ok) {
+                    const c = await caches.open('ofm-browse');
+                    await c.put(key, res.clone());
+                  }
+                  return res;
+                } catch {
+                  return new Response(null, { status: 204 }); // leere Kachel statt Fehler
+                }
+              }
+              // Stil, TileJSON, Schriften, Symbole, Übersichtskacheln: aus dem Speicher, im Hintergrund auffrischen
+              const cached = await caches.match(request.url);
+              const network = fetch(request)
+                .then(async (res) => {
+                  if (res.ok) {
+                    const c = await caches.open('ofm-static');
+                    await c.put(request.url, res.clone());
+                  }
+                  return res;
+                })
+                .catch(() => null);
+              if (cached) return cached;
+              const res = await network;
+              return res ?? new Response(null, { status: 504 });
+            },
+          },
+        ],
       },
     }),
   ],

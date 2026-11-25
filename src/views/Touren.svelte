@@ -5,6 +5,7 @@
   import { openTour, exportTour, deleteTour, renameTour, importGpxFiles, confirmDiscard } from '../lib/tours';
   import { planner } from '../lib/planner.svelte';
   import { ui } from '../lib/ui.svelte';
+  import OfflineAreas from '../components/OfflineAreas.svelte';
 
   let tours = $state<Tour[] | null>(null);
   let filter = $state('');
@@ -93,7 +94,10 @@
   </ul>
 {/if}
 
+<div class="offline-section"><OfflineAreas /></div>
+
 <style>
+  .offline-section { margin-top: 16px; }
   .head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
   .head h2 { margin: 0; }
   .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

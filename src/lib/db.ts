@@ -62,10 +62,25 @@ export interface RecPoint {
   seg: number;
 }
 
+/** Heruntergeladenes Kartengebiet (für die Offline-Nutzung) */
+export interface OfflineArea {
+  id: string;
+  name: string;
+  kind: 'tour' | 'view';
+  tourId?: string;
+  createdAt: number;
+  /** [west, süd, ost, nord] */
+  bbox: [number, number, number, number];
+  /** Kachel-Schlüssel "z/x/y" – zum gezielten Löschen */
+  tiles: string[];
+  bytes: number;
+}
+
 class WanderDB extends Dexie {
   tours!: Table<Tour, string>;
   recordings!: Table<Recording, string>;
   recPoints!: Table<RecPoint, number>;
+  offlineAreas!: Table<OfflineArea, string>;
 
   constructor() {
     super('wanderapp');
@@ -76,6 +91,12 @@ class WanderDB extends Dexie {
       tours: 'id, kind, updatedAt, name',
       recordings: 'id',
       recPoints: '++id, recId',
+    });
+    this.version(3).stores({
+      tours: 'id, kind, updatedAt, name',
+      recordings: 'id',
+      recPoints: '++id, recId',
+      offlineAreas: 'id, tourId, createdAt',
     });
   }
 }

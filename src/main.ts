@@ -3,6 +3,7 @@ import { mount } from 'svelte';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App.svelte';
 import { swState } from './lib/status.svelte';
+import { trimBrowseCache } from './lib/offline.svelte';
 
 registerSW({
   immediate: true,
@@ -20,3 +21,6 @@ registerSW({
 });
 
 mount(App, { target: document.getElementById('app')! });
+
+// Beim Surfen gesammelte Kartenkacheln begrenzen (die bewusst heruntergeladenen bleiben)
+setTimeout(() => trimBrowseCache(), 10_000);

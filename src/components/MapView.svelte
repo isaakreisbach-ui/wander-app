@@ -15,6 +15,13 @@
 
   let container: HTMLDivElement;
   let menuOpen = $state(false);
+  let online = $state(navigator.onLine);
+  $effect(() => {
+    const on = () => (online = true), off = () => (online = false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  });
   let message = $state<string | null>(null);
   let messageTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -137,6 +144,13 @@
     {/if}
   </div>
 
+  {#if !online && mapSettings.base !== 'standard'}
+    <div class="offline-hint" role="status">
+      Ohne Netz ist nur die <b>Standard-Karte</b> verfügbar.
+      <button onclick={() => chooseBase('standard')}>Umschalten</button>
+    </div>
+  {/if}
+
   {#if message}
     <div class="toast" role="status">{message}</div>
   {/if}
@@ -175,6 +189,12 @@
   .opt.sel .radio { border-color: var(--green); box-shadow: inset 0 0 0 4px #fff; background: var(--green); }
   .opt.sel .check { border-color: var(--green); background: var(--green); }
 
+  .offline-hint {
+    position: absolute; z-index: 3; left: 10px; right: 10px; top: 66px; margin: 0 auto; max-width: 420px;
+    background: #fff1d6; border: 1px solid #f0b44c; border-radius: 12px; padding: 8px 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .9rem;
+  }
+  .offline-hint button { border: 0; background: var(--green); color: #fff; border-radius: 8px; padding: 8px 12px; font-weight: 700; }
   .toast {
     position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 3;
     width: min(420px, calc(100% - 24px));

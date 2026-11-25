@@ -124,6 +124,16 @@ export function simplifyIndices(pts: Pt[], tolerance: number): number[] {
   return out;
 }
 
+/**
+ * Ist dieser Abschnitt eine Luftlinie (schnurgerade, also keinem Weg gefolgt)?
+ * Echte Wege weichen fast immer um mehr als ein paar Meter von der Geraden ab.
+ */
+export function isStraight(pts: Pt[]): boolean {
+  if (pts.length < 2) return false;
+  if (distance(pts[0], pts[pts.length - 1]) < 60) return false; // sehr kurze Stücke nicht markieren
+  return simplifyIndices(pts, 2).length === 2;
+}
+
 /** Wenige gut verteilte Stützpunkte für eine importierte Strecke (zum späteren Bearbeiten) */
 export function anchorIndices(pts: Pt[], maxCount = 25): number[] {
   let tol = 15;

@@ -12,6 +12,7 @@
   import ShareDialog from './components/ShareDialog.svelte';
   import QrScanner from './components/QrScanner.svelte';
   import ReceiveDialogs from './components/ReceiveDialogs.svelte';
+  import OfflineProgress from './components/OfflineProgress.svelte';
 
   // Wurde die App mit einem Tour-Link geöffnet? (auch später, wenn am PC ein Link eingefügt wird)
   checkLaunchLink();
@@ -129,6 +130,7 @@
   {#if ui.share}<ShareDialog tour={ui.share} />{/if}
   {#if ui.scanner}<QrScanner />{/if}
   <ReceiveDialogs />
+  <OfflineProgress />
 
   {#if ui.toast}<div class="app-toast" role="status">{ui.toast}</div>{/if}
   {#if dragging}<div class="dropzone">GPX-Datei hier loslassen zum Importieren</div>{/if}
