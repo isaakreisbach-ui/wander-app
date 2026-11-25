@@ -79,6 +79,61 @@ export function setTrailsVisible(map: MlMap, visible: boolean) {
   if (map.getLayer(TRAILS_LAYER)) map.setLayoutProperty(TRAILS_LAYER, 'visibility', visible ? 'visible' : 'none');
 }
 
+/**
+ * Anpassungen an der Standard-Karte (OpenFreeMap „Liberty“) für Wanderer:
+ * Straßennamen und Straßennummern ausblenden, Gipfel mit Namen und Höhe einblenden.
+ */
+export function adjustStandardStyle(map: MlMap) {
+  if (!map.getSource('openmaptiles')) return;
+  for (const layer of map.getStyle().layers ?? []) {
+    if ('source-layer' in layer && layer['source-layer'] === 'transportation_name') {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    }
+  }
+  if (map.getLayer('peaks-label')) return;
+  map.addLayer({
+    id: 'peaks-dot',
+    type: 'circle',
+    source: 'openmaptiles',
+    'source-layer': 'mountain_peak',
+    minzoom: 10,
+    filter: ['in', ['get', 'class'], ['literal', ['peak', 'volcano']]],
+    paint: {
+      'circle-radius': 3.5,
+      'circle-color': '#6b4a2b',
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': 1.5,
+    },
+  });
+  map.addLayer({
+    id: 'peaks-label',
+    type: 'symbol',
+    source: 'openmaptiles',
+    'source-layer': 'mountain_peak',
+    minzoom: 10,
+    filter: ['all', ['in', ['get', 'class'], ['literal', ['peak', 'volcano']]], ['has', 'name']],
+    layout: {
+      'text-field': [
+        'case',
+        ['has', 'ele'],
+        ['format', ['coalesce', ['get', 'name:de'], ['get', 'name']], {}, '\n', {}, ['concat', ['to-string', ['get', 'ele']], ' m'], { 'font-scale': 0.85 }],
+        ['coalesce', ['get', 'name:de'], ['get', 'name']],
+      ],
+      'text-font': ['Noto Sans Bold'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 10, 11, 15, 14],
+      'text-anchor': 'top',
+      'text-offset': [0, 0.5],
+      'text-max-width': 9,
+      'symbol-sort-key': ['coalesce', ['get', 'rank'], 99],
+    },
+    paint: {
+      'text-color': '#4a2f17',
+      'text-halo-color': '#ffffff',
+      'text-halo-width': 1.6,
+    },
+  });
+}
+
 // ---------- gespeicherte Einstellungen ----------
 
 const KEY = 'wander.map.v1';

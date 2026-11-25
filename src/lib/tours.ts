@@ -1,7 +1,9 @@
 // Aktionen rund um gespeicherte Touren, die von mehreren Bereichen genutzt werden.
 
 import { db, type Tour } from './db';
-import { planner, tourFromTrack } from './planner.svelte';
+import { planner, tourFromTrack, tourFromShare } from './planner.svelte';
+import { parseShareLink, type SharePayload } from './share';
+import { detectPlatform, isStandalone } from './status.svelte';
 import { mapState } from './map.svelte';
 import { ui, toast } from './ui.svelte';
 import { toGpx, parseGpx, safeFileName, shareOrDownload } from './gpx';
@@ -34,7 +36,7 @@ export function openTour(t: Tour) {
   fitRoute(t.route);
 }
 
-export async function exportTour(t: Pick<Tour, 'name' | 'route' | 'waypoints'>) {
+export async function exportTour(t: Pick<Tour, 'name' | 'route'> & { waypoints: { lng: number; lat: number }[] }) {
   await shareOrDownload(`${safeFileName(t.name)}.gpx`, toGpx(t.name, t.route, t.waypoints));
 }
 
@@ -50,6 +52,61 @@ export async function renameTour(t: Tour) {
   if (!name || name === t.name) return;
   await db.tours.update(t.id, { name, updatedAt: Date.now() });
   if (planner.tourId === t.id) planner.name = name;
+}
+
+// ---------- Teilen per Link / QR ----------
+
+/**
+ * Text (Link, eingefügter Text, QR-Inhalt) prüfen und die Tour zum Übernehmen anbieten.
+ * Gibt false zurück, wenn kein Tour-Link darin steckt.
+ */
+export function receiveShareText(text: string): boolean {
+  let p: SharePayload | null;
+  try {
+    p = parseShareLink(text);
+  } catch (e) {
+    alert((e as Error).message);
+    return true;
+  }
+  if (!p) return false;
+  ui.incoming = p;
+  return true;
+}
+
+/** Beim Start: Steckt eine Tour im Link, mit dem die App geöffnet wurde? */
+export function checkLaunchLink() {
+  const hash = location.hash;
+  if (!hash.startsWith('#t=')) return;
+  const url = location.href;
+  history.replaceState(null, '', location.pathname + location.search);
+  // iPhone: Safari und Homescreen-App haben getrennte Speicher → Hinweis, den Link in die App zu holen
+  if (detectPlatform() === 'ios' && !isStandalone()) {
+    ui.handoff = url;
+    return;
+  }
+  receiveShareText(url);
+}
+
+/** Empfangene Tour speichern, öffnen und (bei geplanten Touren) exakt neu berechnen */
+export async function acceptIncoming() {
+  if (!ui.incoming) return;
+  // Reine Kopie ohne Svelte-Proxy – sonst kann IndexedDB die Daten nicht speichern
+  const p: SharePayload = JSON.parse(JSON.stringify(ui.incoming));
+  if (!confirmDiscard()) return;
+  ui.incoming = null;
+  const tour = tourFromShare(p);
+  await db.tours.put(tour);
+  planner.open(tour);
+  ui.view = 'planen';
+  fitRoute(tour.route);
+  if (p.kind === 'plan' && p.followTrails && navigator.onLine) {
+    toast(`„${tour.name}“ gespeichert – Route wird genau berechnet …`);
+    const ok = await planner.reroute();
+    if (planner.tourId === tour.id) await planner.save();
+    toast(ok ? `„${tour.name}“ übernommen` : `„${tour.name}“ übernommen (vereinfachte Strecke)`);
+  } else {
+    toast(`„${tour.name}“ übernommen`);
+  }
 }
 
 /** GPX-Datei(en) einlesen: eine Strecke → direkt zum Bearbeiten öffnen, mehrere → alle speichern */

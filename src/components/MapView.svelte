@@ -8,7 +8,7 @@
 
   setWorkerUrl(workerUrl);
   import {
-    BASES, styleFor, addTrailsOverlay, setTrailsVisible, mapSettings, saveMapSettings,
+    BASES, styleFor, addTrailsOverlay, setTrailsVisible, mapSettings, saveMapSettings, adjustStandardStyle,
     mapState, runStyleHooks, type BaseId,
   } from '../lib/map.svelte';
 
@@ -69,6 +69,7 @@
 
     map.on('style.load', () => {
       addTrailsOverlay(map, mapSettings.trails);
+      adjustStandardStyle(map); // Gipfel über den Wanderwegen, Straßennamen aus
       runStyleHooks(map);
     });
 

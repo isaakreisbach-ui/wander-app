@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.4 – Touren speichern &amp; GPX<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.5 – Teilen per Link &amp; QR-Code<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>

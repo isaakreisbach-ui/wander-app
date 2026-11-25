@@ -36,6 +36,8 @@
   <div class="actions">
     <button class="btn" onclick={newPlan}>＋ Neue Tour</button>
     <button class="btn secondary" onclick={() => fileInput.click()}>GPX importieren</button>
+    <button class="btn secondary" onclick={() => (ui.scanner = true)}>📷 QR scannen</button>
+    <button class="btn secondary" onclick={() => (ui.pasteLink = true)}>🔗 Link einfügen</button>
     <input
       bind:this={fileInput}
       type="file"
@@ -73,12 +75,13 @@
             {/if}
           </span>
           <span class="date">
-            {t.source === 'gpx' ? 'Importiert' : 'Geplant'} · zuletzt geändert {fmtDate(t.updatedAt)}
+            {t.kind === 'track' ? 'Aufgezeichnet' : t.source === 'gpx' ? 'GPX-Import' : t.source === 'link' ? 'Empfangen' : 'Geplant'} · zuletzt geändert {fmtDate(t.updatedAt)}
             {#if planner.tourId === t.id}<b> · gerade geöffnet</b>{/if}
           </span>
         </button>
         <div class="row">
           <button onclick={() => openTour(t)}>Öffnen</button>
+          <button onclick={() => (ui.share = t)}>Teilen</button>
           <button onclick={() => exportTour(t)}>GPX</button>
           <button onclick={() => renameTour(t)}>Umbenennen</button>
           <button class="danger" onclick={() => deleteTour(t)}>Löschen</button>
@@ -112,9 +115,10 @@
   .diff.leicht { background: #1d7a3e; }
   .diff.mittel { background: #c77700; }
   .diff.schwer { background: #b3261e; }
-  .row { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); }
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); }
   .row button {
-    min-height: 48px; border: 0; background: none; font-size: .85rem; font-weight: 650; color: var(--green);
+    min-height: 48px; border: 0; background: none; font-size: .8rem; font-weight: 650; color: var(--green);
+    padding: 0 2px; overflow: hidden; text-overflow: ellipsis;
   }
   .row button + button { border-left: 1px solid var(--line); }
   .row button:hover { background: var(--green-soft); }

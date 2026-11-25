@@ -7,7 +7,17 @@
   import { requestPersistentStorage } from './lib/status.svelte';
   import { planner } from './lib/planner.svelte';
   import { ui, type View } from './lib/ui.svelte';
-  import { importGpxFiles } from './lib/tours';
+  import { importGpxFiles, checkLaunchLink } from './lib/tours';
+  import ShareDialog from './components/ShareDialog.svelte';
+  import QrScanner from './components/QrScanner.svelte';
+  import ReceiveDialogs from './components/ReceiveDialogs.svelte';
+
+  // Wurde die App mit einem Tour-Link geöffnet? (auch später, wenn am PC ein Link eingefügt wird)
+  checkLaunchLink();
+  $effect(() => {
+    window.addEventListener('hashchange', checkLaunchLink);
+    return () => window.removeEventListener('hashchange', checkLaunchLink);
+  });
 
   const tabs: { id: View; label: string; icon: string; mobileOnly?: boolean }[] = [
     { id: 'karte', label: 'Karte', icon: '🧭', mobileOnly: true },
@@ -108,13 +118,17 @@
     </section>
   {/if}
 
+  {#if ui.share}<ShareDialog tour={ui.share} />{/if}
+  {#if ui.scanner}<QrScanner />{/if}
+  <ReceiveDialogs />
+
   {#if ui.toast}<div class="app-toast" role="status">{ui.toast}</div>{/if}
   {#if dragging}<div class="dropzone">GPX-Datei hier loslassen zum Importieren</div>{/if}
 </div>
 
 <style>
   .app-toast {
-    position: fixed; z-index: 20; left: 50%; transform: translateX(-50%);
+    position: fixed; z-index: 50; left: 50%; transform: translateX(-50%);
     top: calc(64px + var(--safe-top));
     max-width: min(440px, calc(100% - 24px));
     background: #1f2a22; color: #fff; padding: 10px 16px; border-radius: 12px;

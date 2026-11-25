@@ -2,7 +2,18 @@
   import { planner, defaultTourName } from '../lib/planner.svelte';
   import { formatDistance, formatDuration } from '../lib/geo';
   import { exportTour, confirmDiscard } from '../lib/tours';
-  import { toast } from '../lib/ui.svelte';
+  import { toast, ui } from '../lib/ui.svelte';
+
+  function share() {
+    ui.share = {
+      name: planner.name.trim() || defaultTourName(),
+      kind: 'plan',
+      route: planner.route,
+      segStart: planner.segStart,
+      followTrails: planner.followTrails,
+      waypoints: planner.waypoints,
+    };
+  }
   import ElevationProfile from '../components/ElevationProfile.svelte';
 
   const coarse = window.matchMedia('(pointer: coarse)').matches;
@@ -115,6 +126,7 @@
     <button class="tool" onclick={() => planner.undo()} disabled={!planner.canUndo} title="Rückgängig (Strg+Z)">↶<span>Zurück</span></button>
     <button class="tool" onclick={() => planner.redo()} disabled={!planner.canRedo} title="Wiederholen (Strg+Y)">↷<span>Vor</span></button>
     <button class="tool" onclick={() => planner.reverse()} disabled={n < 2} title="Richtung umkehren">⇄<span>Umkehren</span></button>
+    <button class="tool share" onclick={share} disabled={n < 2 || planner.routing} title="Per Link oder QR-Code aufs Handy schicken">📲<span>Teilen</span></button>
     <button class="tool" onclick={() => exportTour({ name: planner.name || defaultTourName(), route: planner.route, waypoints: planner.waypoints })} disabled={n < 2} title="Als GPX-Datei exportieren">⤓<span>GPX</span></button>
     <button class="tool danger" onclick={confirmClear} title="Alle Punkte löschen">🗑<span>Leeren</span></button>
   </div>
@@ -164,7 +176,8 @@
   .link { border: 0; background: none; padding: 0; color: var(--green); font-weight: 650; text-decoration: underline; font-size: inherit; }
   .link:disabled { color: #aaa; }
 
-  .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px; }
+  .tools { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 12px; }
+  .tool.share span { color: var(--green); }
   .tool {
     min-height: 56px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
     display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.3rem; line-height: 1;

@@ -51,6 +51,28 @@ export function tourFromTrack(name: string, points: Pt[], source: Tour['source']
   };
 }
 
+/** Tour aus einem Teilen-Link anlegen */
+export function tourFromShare(p: {
+  kind: Tour['kind']; name: string; followTrails: boolean;
+  waypoints: [number, number][]; route: Pt[]; segStart: number[];
+}): Tour {
+  const now = Date.now();
+  return {
+    id: newTourId(),
+    kind: p.kind,
+    name: p.name,
+    createdAt: now,
+    updatedAt: now,
+    waypoints: p.waypoints.map(([lng, lat]) => ({ id: newId(), lng, lat })),
+    followTrails: p.followTrails,
+    route: p.route,
+    segStart: p.segStart,
+    stats: computeStats(p.route, cumulative(p.route)),
+    start: p.route.length ? [p.route[0][0], p.route[0][1]] : null,
+    source: 'link',
+  };
+}
+
 export function defaultTourName() {
   return `Tour vom ${new Date().toLocaleDateString('de-DE')}`;
 }
@@ -273,7 +295,19 @@ class Planner {
     }
   }
 
-  async recompute() {
+  /**
+   * Alle Abschnitte neu mit BRouter berechnen (z. B. nach Empfang per Link, wo nur eine
+   * vereinfachte Strecke mitkam). Klappt das nicht, bleibt die bisherige Strecke stehen.
+   * Gibt true zurück, wenn alles neu berechnet werden konnte.
+   */
+  async reroute(): Promise<boolean> {
+    const prior = new Map(this.cache);
+    this.cache.clear();
+    await this.recompute(prior);
+    return !this.error;
+  }
+
+  async recompute(prior?: Map<string, Pt[]>) {
     const gen = ++this.generation;
     this.abort?.abort();
     const ctrl = (this.abort = new AbortController());
@@ -308,6 +342,13 @@ class Planner {
           this.cache.set(k, seg);
         } catch (e) {
           if ((e as Error).name === 'AbortError') return;
+          const old = prior?.get(k);
+          if (old) {
+            // bisherige Strecke behalten
+            this.cache.set(k, old);
+            errors.push('Route konnte nicht neu berechnet werden – die mitgeschickte Strecke wird verwendet.');
+            continue;
+          }
           errors.push(
             e instanceof RoutingError ? e.message
               : navigator.onLine ? 'Keine Verbindung zum Routenserver.' : 'Ohne Internet kann keine Route berechnet werden.',
@@ -330,7 +371,9 @@ class Planner {
     this.segStart = segStart;
     this.route = route;
     this.routing = false;
-    if (errors.length) this.error = `${errors[0]} Dieser Abschnitt ist als Luftlinie eingezeichnet.`;
+    if (errors.length) {
+      this.error = errors[0].includes('mitgeschickte') ? errors[0] : `${errors[0]} Dieser Abschnitt ist als Luftlinie eingezeichnet.`;
+    }
     this.saveDraft();
   }
 
