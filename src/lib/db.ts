@@ -33,15 +33,49 @@ export interface Tour {
   /** Für später: geplanter Tag (YYYY-MM-DD), Notizen fürs Tagebuch */
   plannedFor?: string;
   notes?: string;
+  /** Nur bei Aufzeichnungen: Zeitstempel (ms) je Routenpunkt und Eckdaten */
+  times?: number[];
+  track?: { startedAt: number; endedAt: number; movingMs: number };
+}
+
+/** Laufende (noch nicht beendete) Aufzeichnung – überlebt Absturz und Neustart */
+export interface Recording {
+  id: string;
+  startedAt: number;
+  status: 'recording' | 'paused';
+  /** Bewegungszeit bis zur letzten Pause */
+  movingMs: number;
+  /** Zeitpunkt des letzten Starts/Fortsetzens (null = pausiert) */
+  lastResume: number | null;
+  /** Abschnittsnummer – erhöht sich bei jeder Pause */
+  seg: number;
+}
+
+export interface RecPoint {
+  id?: number;
+  recId: string;
+  t: number;
+  lng: number;
+  lat: number;
+  alt: number | null;
+  acc: number;
+  seg: number;
 }
 
 class WanderDB extends Dexie {
   tours!: Table<Tour, string>;
+  recordings!: Table<Recording, string>;
+  recPoints!: Table<RecPoint, number>;
 
   constructor() {
     super('wanderapp');
     this.version(1).stores({
       tours: 'id, kind, updatedAt, name',
+    });
+    this.version(2).stores({
+      tours: 'id, kind, updatedAt, name',
+      recordings: 'id',
+      recPoints: '++id, recId',
     });
   }
 }

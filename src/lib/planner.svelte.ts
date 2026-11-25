@@ -94,7 +94,9 @@ class Planner {
   tourId = $state<string | null>(null);
   name = $state('');
   dirty = $state(false);
-  private meta: Pick<Tour, 'createdAt' | 'source' | 'plannedFor' | 'notes'> | null = null;
+  private meta: (Pick<Tour, 'createdAt' | 'source' | 'plannedFor' | 'notes' | 'times' | 'track'> & { kind?: Tour['kind'] }) | null = null;
+  /** Art der geöffneten Tour (geplant oder aufgezeichnet) */
+  get kind(): Tour['kind'] { return this.meta?.kind ?? 'plan'; }
 
   cum = $derived(cumulative(this.route));
   stats = $derived(computeStats(this.route, this.cum));
@@ -244,7 +246,10 @@ class Planner {
     this.segStart = t.segStart;
     this.tourId = t.id;
     this.name = t.name;
-    this.meta = { createdAt: t.createdAt, source: t.source, plannedFor: t.plannedFor, notes: t.notes };
+    this.meta = {
+      createdAt: t.createdAt, source: t.source, plannedFor: t.plannedFor, notes: t.notes,
+      kind: t.kind, times: t.times, track: t.track,
+    };
     this.dirty = false;
     this.saveDraft();
   }
@@ -254,9 +259,14 @@ class Planner {
     const now = Date.now();
     const id = !asNew && this.tourId ? this.tourId : newTourId();
     const name = this.name.trim() || defaultTourName();
+    // Eine Aufzeichnung bleibt eine Aufzeichnung, solange die Strecke nicht verändert wurde
+    const m = this.meta;
+    const isTrack = m?.kind === 'track' && !!m.times && m.times.length === this.route.length;
     const tour: Tour = {
       id,
-      kind: 'plan',
+      kind: isTrack ? 'track' : 'plan',
+      times: isTrack ? m!.times : undefined,
+      track: isTrack ? m!.track : undefined,
       name,
       createdAt: !asNew && this.meta?.createdAt ? this.meta.createdAt : now,
       updatedAt: now,
@@ -273,7 +283,10 @@ class Planner {
     await db.tours.put(tour);
     this.tourId = id;
     this.name = name;
-    this.meta = { createdAt: tour.createdAt, source: tour.source, plannedFor: tour.plannedFor, notes: tour.notes };
+    this.meta = {
+      createdAt: tour.createdAt, source: tour.source, plannedFor: tour.plannedFor, notes: tour.notes,
+      kind: tour.kind, times: tour.times, track: tour.track,
+    };
     this.dirty = false;
     this.saveDraft();
     return tour;

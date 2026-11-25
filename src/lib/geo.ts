@@ -56,13 +56,14 @@ export type Difficulty = 'leicht' | 'mittel' | 'schwer';
 /** Einfache Einstufung aus Länge, Höhenmetern, Gehzeit und steilstem Abschnitt */
 export function difficulty(meters: number, up: number, hours: number, maxGrade: number): Difficulty {
   const km = meters / 1000;
-  if (km > 20 || up > 1000 || hours > 6 || maxGrade > 45) return 'schwer';
-  if (km > 10 || up > 400 || hours > 3 || maxGrade > 28) return 'mittel';
+  // Steilheit allein macht eine kurze Tour nicht „schwer“, kann sie aber auf „mittel“ heben
+  if (km > 20 || up > 1000 || hours > 6) return 'schwer';
+  if (km > 10 || up > 400 || hours > 3 || maxGrade > 30) return 'mittel';
   return 'leicht';
 }
 
 /** Steilster Abschnitt in % (über mind. 100 m gemittelt, damit Ausreißer nicht zählen) */
-export function maxGrade(pts: Pt[], cum: number[], window = 100): number {
+export function maxGrade(pts: Pt[], cum: number[], window = 200): number {
   let max = 0;
   let j = 0;
   for (let i = 0; i < pts.length; i++) {

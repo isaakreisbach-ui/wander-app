@@ -7,7 +7,7 @@
   function share() {
     ui.share = {
       name: planner.name.trim() || defaultTourName(),
-      kind: 'plan',
+      kind: planner.kind,
       route: planner.route,
       segStart: planner.segStart,
       followTrails: planner.followTrails,

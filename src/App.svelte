@@ -6,6 +6,7 @@
   import Info from './views/Info.svelte';
   import { requestPersistentStorage } from './lib/status.svelte';
   import { planner } from './lib/planner.svelte';
+  import { recorder, formatClock } from './lib/recorder.svelte';
   import { ui, type View } from './lib/ui.svelte';
   import { importGpxFiles, checkLaunchLink } from './lib/tours';
   import ShareDialog from './components/ShareDialog.svelte';
@@ -84,7 +85,14 @@
 <div class="shell" class:sheet-open={panelView !== 'karte'}>
   <header class="topbar">
     <div class="brand">⛰️ Wanderapp</div>
-    {#if !online}<div class="offline">Offline</div>{/if}
+    <div class="top-right">
+      {#if recorder.status !== 'idle'}
+        <button class="rec" class:paused={recorder.status === 'paused'} onclick={() => (ui.view = 'aufzeichnen')}>
+          {recorder.status === 'recording' ? '●' : '❚❚'} {formatClock(recorder.elapsedMs)}
+        </button>
+      {/if}
+      {#if !online}<div class="offline">Offline</div>{/if}
+    </div>
   </header>
 
   <main class="map" aria-label="Karte">
@@ -154,6 +162,12 @@
     background: var(--green); color: #fff;
   }
   .brand { font-weight: 750; font-size: 1.15rem; }
+  .top-right { display: flex; gap: 8px; align-items: center; }
+  .rec {
+    border: 0; border-radius: 999px; padding: 3px 12px; font-weight: 800; font-size: .9rem;
+    background: #c62828; color: #fff; font-variant-numeric: tabular-nums;
+  }
+  .rec.paused { background: #ffd54f; color: #000; }
   .offline {
     background: var(--amber); color: #000; font-weight: 700;
     padding: 2px 10px; border-radius: 999px; font-size: .85rem;

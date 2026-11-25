@@ -36,8 +36,10 @@ export function openTour(t: Tour) {
   fitRoute(t.route);
 }
 
-export async function exportTour(t: Pick<Tour, 'name' | 'route'> & { waypoints: { lng: number; lat: number }[] }) {
-  await shareOrDownload(`${safeFileName(t.name)}.gpx`, toGpx(t.name, t.route, t.waypoints));
+export async function exportTour(t: Pick<Tour, 'name' | 'route'> & { waypoints: { lng: number; lat: number }[]; times?: number[]; kind?: Tour['kind'] }) {
+  // Bei Aufzeichnungen keine Wegpunkte, dafür Zeitstempel
+  const wps = t.kind === 'track' ? [] : t.waypoints;
+  await shareOrDownload(`${safeFileName(t.name)}.gpx`, toGpx(t.name, t.route, wps, t.times));
 }
 
 export async function deleteTour(t: Tour) {

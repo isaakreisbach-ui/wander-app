@@ -70,7 +70,7 @@
               <span>{formatDistance(t.stats.meters)}</span>
               <span>↗ {Math.round(t.stats.up)} m</span>
               <span>↘ {Math.round(t.stats.down)} m</span>
-              <span>⏱ {formatDuration(t.stats.hours)}</span>
+              <span title={t.track ? 'Tatsächliche Gehzeit (ohne Pausen)' : 'Geschätzte Gehzeit'}>⏱ {formatDuration(t.track ? t.track.movingMs / 3600000 : t.stats.hours)}</span>
               <span class="diff {t.stats.difficulty}">{t.stats.difficulty}</span>
             {/if}
           </span>

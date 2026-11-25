@@ -5,13 +5,15 @@ import type { Pt } from './geo';
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export function toGpx(name: string, route: Pt[], waypoints: { lng: number; lat: number }[] = []): string {
+export function toGpx(name: string, route: Pt[], waypoints: { lng: number; lat: number }[] = [], times?: number[]): string {
+  const withTime = !!times && times.length === route.length;
   const wpts = waypoints.map((w, i) => {
     const label = i === 0 ? 'Start' : i === waypoints.length - 1 ? 'Ziel' : `Punkt ${i}`;
     return `  <wpt lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}"><name>${label}</name></wpt>`;
   });
-  const trkpts = route.map((p) =>
-    `      <trkpt lat="${p[1].toFixed(6)}" lon="${p[0].toFixed(6)}">${p[2] !== undefined ? `<ele>${p[2].toFixed(1)}</ele>` : ''}</trkpt>`,
+  const trkpts = route.map((p, i) =>
+    `      <trkpt lat="${p[1].toFixed(6)}" lon="${p[0].toFixed(6)}">${p[2] !== undefined ? `<ele>${p[2].toFixed(1)}</ele>` : ''}` +
+    `${withTime ? `<time>${new Date(times![i]).toISOString()}</time>` : ''}</trkpt>`,
   );
   return `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Wanderapp" xmlns="http://www.topografix.com/GPX/1/1">

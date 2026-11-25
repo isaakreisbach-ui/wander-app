@@ -3,6 +3,7 @@
   import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
   import SearchBox from './SearchBox.svelte';
   import PlanOverlay from './PlanOverlay.svelte';
+  import RecordOverlay from './RecordOverlay.svelte';
   import { onMount } from 'svelte';
   import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -108,6 +109,7 @@
   <div class="map" bind:this={container}></div>
 
   <PlanOverlay />
+  <RecordOverlay />
 
   <div class="search-slot"><SearchBox /></div>
 
