@@ -33,6 +33,7 @@ h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 h2 { font-size: 1.25rem; }
 p { margin: 0 0 .75em; }
 a { color: var(--green); }
+.muted { color: var(--muted); font-size: .92rem; }
 
 .card {
   background: var(--surface);

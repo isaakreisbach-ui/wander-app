@@ -7,6 +7,8 @@ const BASE = '/wander-app/';
 
 export default defineConfig({
   base: BASE,
+  // MapLibre ist groß (~1 MB) – das ist erwartet und wird offline zwischengespeichert
+  build: { chunkSizeWarningLimit: 1600 },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
@@ -35,7 +37,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,ico,webmanifest}'],
         navigateFallback: BASE + 'index.html',
       },
     }),
