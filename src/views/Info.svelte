@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.12 – Gipfel-Vorschläge, Aussicht &amp; Bänke<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.13 – „Was geht von hier aus?“<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>

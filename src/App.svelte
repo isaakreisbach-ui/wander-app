@@ -15,6 +15,8 @@
   import OfflineProgress from './components/OfflineProgress.svelte';
   import PeakPanel from './components/PeakPanel.svelte';
   import { peakState } from './lib/peaks.svelte';
+  import FromHerePanel from './components/FromHerePanel.svelte';
+  import { fromHere } from './lib/fromhere.svelte';
 
   // Wurde die App mit einem Tour-Link geöffnet? (auch später, wenn am PC ein Link eingefügt wird)
   checkLaunchLink();
@@ -122,7 +124,8 @@
         <span class="grip" aria-hidden="true"></span>
         <span>Karte zeigen ▾</span>
       </button>
-      {#if peakState.peak && panelView === 'planen'}<PeakPanel />
+      {#if fromHere.point && panelView === 'planen'}<FromHerePanel />
+      {:else if peakState.peak && panelView === 'planen'}<PeakPanel />
       {:else if panelView === 'planen'}<Planen />
       {:else if panelView === 'touren'}<Touren />
       {:else if panelView === 'aufzeichnen'}<Aufzeichnen />

@@ -299,7 +299,7 @@ function smoothAltitudes(pts: RecPoint[]): (number | null)[] {
  * Höhen nachträglich aus dem Geländemodell holen (Open-Meteo, max. 1000 Stützstellen),
  * dazwischen wird interpoliert. Ohne Internet bleiben die GPS-Höhen.
  */
-async function correctElevation(route: Pt[]): Promise<Pt[]> {
+export async function correctElevation(route: Pt[]): Promise<Pt[]> {
   if (!navigator.onLine || route.length < 2) return route;
   const step = Math.max(1, Math.ceil(route.length / 1000));
   const idx: number[] = [];

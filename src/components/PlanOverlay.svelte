@@ -7,6 +7,10 @@
   import { planner } from '../lib/planner.svelte';
   import { POI_LAYERS } from '../lib/poiPopup';
   import { PEAK_LAYERS } from '../lib/peaks.svelte';
+  import { openFromHere } from '../lib/fromhere.svelte';
+  import { ui } from '../lib/ui.svelte';
+
+  let suppressClickUntil = 0;
 
   const ROUTE = 'plan-route';
   const HOVER = 'plan-hover';
@@ -191,6 +195,7 @@
 
     const click = (e: MapMouseEvent) => {
       if (menu || wpPopup) { menu = null; wpPopup = null; return; }
+      if (Date.now() < suppressClickUntil) return; // Klick direkt nach langem Druck ignorieren
       if (!planner.active || onMarker(e)) return;
       // Tipp auf Wasserstelle/Hütte öffnet deren Info – kein neuer Routenpunkt
       const poiLayers = [...POI_LAYERS, ...PEAK_LAYERS].filter((l) => map.getLayer(l));
@@ -200,12 +205,44 @@
       else planner.add(e.lngLat.lng, e.lngLat.lat);
     };
 
+    // Rechtsklick (PC) – Menü gibt es überall; Planungs-Einträge nur im Bereich „Planen“
     const context = (e: MapMouseEvent) => {
-      if (!planner.active || onMarker(e)) return;
+      if (onMarker(e)) return;
       e.preventDefault();
       wpPopup = null;
-      menu = { x: e.point.x, y: e.point.y, lng: e.lngLat.lng, lat: e.lngLat.lat, onRoute: routeHitAt(map, e) };
+      menu = { x: e.point.x, y: e.point.y, lng: e.lngLat.lng, lat: e.lngLat.lat, onRoute: planner.active ? routeHitAt(map, e) : null };
     };
+
+    // Langer Druck (iPhone) – öffnet dasselbe Menü
+    const canvas = map.getCanvasContainer();
+    let pressTimer: ReturnType<typeof setTimeout> | undefined;
+    let pressStart: { x: number; y: number } | null = null;
+    const touchStart = (ev: TouchEvent) => {
+      clearTimeout(pressTimer);
+      if (ev.touches.length !== 1) { pressStart = null; return; }
+      const t = ev.touches[0];
+      const r = canvas.getBoundingClientRect();
+      pressStart = { x: t.clientX - r.left, y: t.clientY - r.top };
+      pressTimer = setTimeout(() => {
+        if (!pressStart) return;
+        const ll = map.unproject([pressStart.x, pressStart.y]);
+        wpPopup = null;
+        menu = { x: pressStart.x, y: pressStart.y, lng: ll.lng, lat: ll.lat, onRoute: null };
+        suppressClickUntil = Date.now() + 800;
+        navigator.vibrate?.(15);
+      }, 550);
+    };
+    const touchMove = (ev: TouchEvent) => {
+      if (!pressStart) return;
+      const t = ev.touches[0];
+      const r = canvas.getBoundingClientRect();
+      if (Math.hypot(t.clientX - r.left - pressStart.x, t.clientY - r.top - pressStart.y) > 12) { clearTimeout(pressTimer); pressStart = null; }
+    };
+    const touchEnd = () => { clearTimeout(pressTimer); pressStart = null; };
+    canvas.addEventListener('touchstart', touchStart, { passive: true });
+    canvas.addEventListener('touchmove', touchMove, { passive: true });
+    canvas.addEventListener('touchend', touchEnd);
+    canvas.addEventListener('touchcancel', touchEnd);
 
     const move = (e: MapMouseEvent) => {
       if (!planner.active || planner.route.length < 2 || !map.getLayer(HIT)) return;
@@ -221,6 +258,10 @@
     map.on('mousemove', move);
     map.on('movestart', closeAll);
     return () => {
+      canvas.removeEventListener('touchstart', touchStart);
+      canvas.removeEventListener('touchmove', touchMove);
+      canvas.removeEventListener('touchend', touchEnd);
+      canvas.removeEventListener('touchcancel', touchEnd);
       map.off('click', click);
       map.off('contextmenu', context);
       map.off('mousemove', move);
@@ -257,11 +298,16 @@
 
 {#if menu}
   {@const m = menu}
-  <div class="ctx" style:left="{m.x}px" style:top="{m.y}px" role="menu">
+  <div class="ctx" style:left="{Math.min(m.x, (mapState.map?.getContainer().clientWidth ?? 9999) - 260)}px" style:top="{m.y}px" role="menu">
+    <button role="menuitem" class="primary" onclick={() => act(() => { ui.view = 'planen'; openFromHere(m.lng, m.lat); })}>🔍 Was geht von hier aus?</button>
+    <button role="menuitem" onclick={() => act(() => { ui.view = 'planen'; planner.active = true; planner.add(m.lng, m.lat); })}>
+      📍 {planner.waypoints.length ? 'Als nächsten Punkt anhängen' : 'Tour hier starten'}
+    </button>
+    {#if planner.active}
+    <hr />
     {#if m.onRoute !== null}
       <button role="menuitem" onclick={() => act(() => planner.insert(planner.segmentOf(m.onRoute!), m.lng, m.lat))}>➕ Zwischenpunkt hier einfügen</button>
     {/if}
-    <button role="menuitem" onclick={() => act(() => planner.add(m.lng, m.lat))}>📍 {planner.waypoints.length ? 'Als nächsten Punkt anhängen' : 'Start hier setzen'}</button>
     {#if planner.waypoints.length}
       <button role="menuitem" onclick={() => act(() => planner.prepend(m.lng, m.lat))}>🚩 Als neuen Start setzen</button>
     {/if}
@@ -273,6 +319,7 @@
     {/if}
     {#if planner.waypoints.length}
       <button role="menuitem" class="danger" onclick={() => act(() => planner.clear())}>🗑 Alle Punkte löschen</button>
+    {/if}
     {/if}
   </div>
 {/if}
@@ -318,6 +365,8 @@
   .ctx hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
   kbd { font: 600 .75rem system-ui; color: var(--muted); }
   .danger { color: var(--bad); }
+  .ctx .primary { color: #007aff; font-weight: 650; }
+  :global(.maplibregl-canvas-container) { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 
   .wp-pop { transform: translate(-50%, calc(-100% - 26px)); min-width: 190px; text-align: center; }
   .wp-title { font-weight: 700; padding: 4px 8px 2px; }

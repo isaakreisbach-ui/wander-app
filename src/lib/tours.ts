@@ -7,7 +7,7 @@ import { detectPlatform, isStandalone } from './status.svelte';
 import { mapState } from './map.svelte';
 import { ui, toast } from './ui.svelte';
 import { toGpx, parseGpx, safeFileName, shareOrDownload } from './gpx';
-import type { Pt } from './geo';
+import { distance, type Pt } from './geo';
 
 export function fitRoute(route: Pt[]) {
   const map = mapState.map;
@@ -119,7 +119,21 @@ export async function importGpxFiles(files: FileList | File[]) {
     try {
       const text = await file.text();
       const tracks = parseGpx(text, file.name.replace(/\.gpx$/i, ''));
-      const tours = tracks.map((t) => tourFromTrack(t.name, t.points, 'gpx'));
+      const tours = tracks.map((t) => {
+        const tour = tourFromTrack(t.name, t.points, 'gpx');
+        if (!t.times) return tour;
+        // Mit Zeitstempeln = Aufzeichnung (z. B. aus „Open GPX Tracker“): echte Gehzeit ohne Pausen
+        let moving = 0;
+        for (let i = 1; i < t.points.length; i++) {
+          const dt = t.times[i] - t.times[i - 1];
+          const d = distance(t.points[i - 1], t.points[i]);
+          if (dt > 0 && dt < 5 * 60_000 && d / (dt / 1000) > 0.3) moving += dt;
+        }
+        return {
+          ...tour, kind: 'track' as const, times: t.times, createdAt: t.times[0],
+          track: { startedAt: t.times[0], endedAt: t.times[t.times.length - 1], movingMs: moving },
+        };
+      });
       await db.tours.bulkPut(tours);
       imported += tours.length;
       // Eine einzelne Strecke gleich zum Ansehen/Bearbeiten öffnen

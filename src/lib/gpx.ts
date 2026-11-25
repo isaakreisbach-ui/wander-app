@@ -29,7 +29,7 @@ ${trkpts.join('\n')}
 `;
 }
 
-export type ParsedGpx = { name: string; points: Pt[] };
+export type ParsedGpx = { name: string; points: Pt[]; times?: number[] };
 
 /** Liest Tracks (trk) oder – falls keine vorhanden – Routen (rte) aus einer GPX-Datei */
 export function parseGpx(text: string, fallbackName: string): ParsedGpx[] {
@@ -50,10 +50,18 @@ export function parseGpx(text: string, fallbackName: string): ParsedGpx[] {
     Array.from(el.getElementsByTagName('name'))[0]?.textContent?.trim() || '';
   const docName = doc.getElementsByTagName('metadata')[0] ? nameOf(doc.getElementsByTagName('metadata')[0]) : '';
 
+  // Zeitstempel (nur wenn jeder Punkt einen hat) → dann ist es eine Aufzeichnung
+  const readTimes = (els: HTMLCollectionOf<Element>): number[] | undefined => {
+    const t = Array.from(els).map((el) => Date.parse(el.getElementsByTagName('time')[0]?.textContent ?? ''));
+    return t.length && t.every((x) => !Number.isNaN(x)) ? t : undefined;
+  };
+
   const out: ParsedGpx[] = [];
   for (const trk of Array.from(doc.getElementsByTagName('trk'))) {
-    const points = read(trk.getElementsByTagName('trkpt'));
-    if (points.length >= 2) out.push({ name: nameOf(trk) || docName || fallbackName, points });
+    const els = trk.getElementsByTagName('trkpt');
+    const points = read(els);
+    const times = readTimes(els);
+    if (points.length >= 2) out.push({ name: nameOf(trk) || docName || fallbackName, points, times: times?.length === points.length ? times : undefined });
   }
   if (!out.length) {
     for (const rte of Array.from(doc.getElementsByTagName('rte'))) {

@@ -6,6 +6,7 @@
   import RecordOverlay from './RecordOverlay.svelte';
   import PoiOverlay from './PoiOverlay.svelte';
   import PeakOverlay from './PeakOverlay.svelte';
+  import FromHereOverlay from './FromHereOverlay.svelte';
   import FlyoverBar from './FlyoverBar.svelte';
   import { flyover } from '../lib/flyover.svelte';
   import { onMount } from 'svelte';
@@ -121,6 +122,7 @@
 
   <PoiOverlay />
   <PeakOverlay />
+  <FromHereOverlay />
   <PlanOverlay />
   <RecordOverlay />
   {#if flyover.active}<FlyoverBar />{/if}
