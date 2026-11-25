@@ -17,6 +17,7 @@
   import ElevationProfile from '../components/ElevationProfile.svelte';
   import WeatherCard from '../components/WeatherCard.svelte';
   import OfflineTourCard from '../components/OfflineTourCard.svelte';
+  import GearCard from '../components/GearCard.svelte';
   import { flyover } from '../lib/flyover.svelte';
 
   function start3d() {
@@ -157,6 +158,7 @@
 
   {#if planner.route.length > 1 && !planner.routing}
     <WeatherCard route={planner.route} />
+    {#if planner.stats}<GearCard stats={planner.stats} tourKey={planner.tourId ?? 'entwurf'} />{/if}
     <OfflineTourCard route={planner.route} tourId={planner.tourId} name={planner.name || defaultTourName()} />
   {/if}
 

@@ -4,6 +4,8 @@
     loadWeather, cachedWeather, isFresh, wxIcon, wxText, dayHints, severityLabel,
     type TourWeather,
   } from '../lib/weather';
+  import Disclosure from './Disclosure.svelte';
+  import { wxShared } from '../lib/wxshared.svelte';
 
   let { route }: { route: Pt[] } = $props();
 
@@ -81,11 +83,41 @@
   }
   const worst = (list: { level: string }[]) =>
     list.some((h) => h.level === 'danger') ? 'danger' : list.some((h) => h.level === 'warn') ? 'warn' : null;
+
+  // Wetter des gewählten Tages für die Ausrüstungs-Box bereitstellen (kältester/windigster Wert von Start und Gipfel)
+  $effect(() => {
+    const w = weather, d = day;
+    if (!w || !d) { wxShared.current = null; return; }
+    const ds = w.places.map((p) => p.days.find((x) => x.date === d)).filter((x): x is NonNullable<typeof x> => !!x);
+    if (!ds.length) { wxShared.current = null; return; }
+    wxShared.current = {
+      day: ds[0],
+      tMin: Math.min(...ds.map((x) => x.tMin)),
+      tMax: Math.max(...ds.map((x) => x.tMax)),
+      gusts: Math.max(...ds.map((x) => x.gusts)),
+      precip: Math.max(...ds.map((x) => x.precip)),
+      precipProb: Math.max(...ds.map((x) => x.precipProb ?? 0)),
+      hints,
+    };
+  });
+  $effect(() => () => { wxShared.current = null; });
+
+  // Kurzinfo in der Kopfzeile der Box
+  const summary = $derived.by(() => {
+    if (!weather || !day) return loading ? 'Wird geladen …' : error ?? '';
+    const i = days.findIndex((d) => d.date === day);
+    const d0 = days[i];
+    let s = `${weekday(day, i)} ${wxIcon(d0.code)} ${Math.round(d0.tMax)}° / ${Math.round(d0.tMin)}°`;
+    if (weather.alerts.length) s += ` · ⚠️ ${weather.alerts[0].event.charAt(0) + weather.alerts[0].event.slice(1).toLowerCase()}`;
+    else if (hints.length) s += ` · ${hints[0].text.split(' – ')[0]}`;
+    return s;
+  });
+  const alertBadge = $derived(weather?.alerts.length ? `${weather.alerts.length} Warnung${weather.alerts.length > 1 ? 'en' : ''}` : '');
 </script>
 
-<div class="card weather">
+<Disclosure id="weather" icon="⛅" tint="#007aff" title="Wetter" {summary} badge={alertBadge}>
   <div class="head">
-    <h3>Wetter</h3>
+    <span class="muted small">Start{weather && weather.places.length > 1 ? ' und höchster Punkt' : ''}</span>
     <button class="refresh" onclick={() => refresh(true)} disabled={loading} title="Aktualisieren" aria-label="Wetter aktualisieren">
       <span class:spin={loading}>⟳</span>
     </button>
@@ -176,19 +208,18 @@
   {:else if loading}
     <p class="muted">Wetter wird geladen …</p>
   {/if}
-</div>
+</Disclosure>
 
 <style>
-  .weather { padding: 12px; }
-  .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  h3 { margin: 0; font-size: 1.05rem; }
-  .refresh { width: 40px; height: 40px; border: 0; background: none; font-size: 1.3rem; border-radius: 10px; color: var(--green); }
-  .refresh:hover { background: var(--green-soft); }
+  .head { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 6px; }
+  .small { font-size: .8rem; }
+  .refresh { width: 36px; height: 36px; border: 0; background: #f2f2f7; font-size: 1.15rem; border-radius: 50%; color: #007aff; }
+  .refresh:active { background: #e5e5ea; }
   .spin { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .err { color: var(--warn); font-size: .9rem; }
 
-  .alert { border-radius: 10px; margin-bottom: 8px; border-left: 6px solid; background: #fff8d6; border-color: #e5c100; }
+  .alert { border-radius: 12px; margin-bottom: 8px; border-left: 4px solid; background: #fff8d6; border-color: #e5c100; overflow: hidden; }
   .alert.moderate { background: #ffedd5; border-color: #f08c00; }
   .alert.severe { background: #fde2e1; border-color: #d00000; }
   .alert.extreme { background: #f3e1f7; border-color: #8a0099; }
@@ -197,27 +228,29 @@
   .when { font-size: .8rem; color: var(--muted); }
   .alert p { margin: 0 10px 8px; font-size: .88rem; }
 
-  .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-bottom: 8px; }
+  .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-bottom: 10px; }
   .day {
-    position: relative; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
-    padding: 6px 2px; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0;
+    position: relative; border: 0; border-radius: 12px; background: #f2f2f7; color: #1c1c1e;
+    padding: 7px 2px; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0;
+    transition: background .15s;
   }
-  .day.sel { border-color: var(--green); background: var(--green-soft); box-shadow: inset 0 0 0 1px var(--green); }
-  .wd { font-size: .72rem; font-weight: 700; }
-  .dt { font-size: .65rem; color: var(--muted); }
+  .day.sel { background: #007aff; color: #fff; }
+  .day.sel .dt, .day.sel .rp { color: rgba(255, 255, 255, .85); }
+  .wd { font-size: .72rem; font-weight: 600; }
+  .dt { font-size: .65rem; color: #8e8e93; }
   .ic { font-size: 1.35rem; line-height: 1.2; }
   .tt { font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .rp { font-size: .65rem; color: #1c5fa8; white-space: nowrap; }
-  .dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; }
-  .dot.warn { background: #f08c00; }
-  .dot.danger { background: #d00000; }
+  .rp { font-size: .65rem; color: #007aff; white-space: nowrap; }
+  .dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff; }
+  .dot.warn { background: #ff9500; }
+  .dot.danger { background: #ff3b30; }
 
-  .summary { font-size: .88rem; margin: 4px 0 6px; }
-  .hints { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 4px; }
-  .hints li { font-size: .86rem; padding: 6px 10px; border-radius: 8px; }
-  .hints .info { background: #e7f0fb; }
-  .hints .warn { background: #ffedd5; }
-  .hints .danger { background: #fde2e1; font-weight: 650; }
+  .summary { font-size: .88rem; margin: 4px 0 8px; color: #3a3a3c; }
+  .hints { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
+  .hints li { font-size: .86rem; padding: 8px 12px; border-radius: 12px; }
+  .hints .info { background: #eaf3ff; color: #0a3d75; }
+  .hints .warn { background: #fff4e5; color: #7a4100; }
+  .hints .danger { background: #ffebea; color: #8a1a13; font-weight: 600; }
 
   .hours-wrap { overflow-x: auto; margin: 0 -4px; }
   .hours { border-collapse: collapse; width: 100%; font-size: .82rem; font-variant-numeric: tabular-nums; }
