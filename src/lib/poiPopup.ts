@@ -4,7 +4,7 @@ import { mapState } from './map.svelte';
 import { openingInfo, POI_STYLE, type Poi } from './pois.svelte';
 import { wxShared } from './wxshared.svelte';
 
-export const POI_LAYERS = ['pois-main', 'pois-food'];
+export const POI_LAYERS = ['pois-main', 'pois-food', 'pois-bench'];
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const link = (u: string) => (/^https?:\/\//.test(u) ? u : `https://${u}`);

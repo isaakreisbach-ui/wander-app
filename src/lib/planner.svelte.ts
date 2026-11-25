@@ -249,6 +249,26 @@ class Planner {
     this.saveDraft();
   }
 
+  /**
+   * Neue Planung aus fertigen Punkten anlegen (z. B. Gipfel-Vorschlag „Start → Gipfel → Start“).
+   * `known` sind bereits berechnete Abschnitte, die nicht erneut geroutet werden müssen.
+   */
+  newPlanFrom(name: string, points: [number, number][], known: { a: [number, number]; b: [number, number]; pts: Pt[] }[] = []) {
+    this.reset();
+    this.followTrails = true;
+    const wp = (p: [number, number]) => ({ id: '', lng: p[0], lat: p[1] });
+    for (const k of known) this.cache.set(this.key(wp(k.a), wp(k.b), true), k.pts);
+    this.waypoints = points.map(([lng, lat]) => ({ id: newId(), lng, lat }));
+    this.route = [];
+    this.segStart = [];
+    this.tourId = null;
+    this.name = name;
+    this.meta = null;
+    this.dirty = true;
+    this.saveDraft();
+    this.recompute();
+  }
+
   /** Gespeicherte Tour zum Bearbeiten öffnen – ohne neu zu routen */
   open(t: Tour) {
     this.reset();

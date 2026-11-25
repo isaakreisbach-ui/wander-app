@@ -2,6 +2,8 @@
   import { Marker } from 'maplibre-gl';
   import { mapState } from '../lib/map.svelte';
   import { search, parseCoordinates, type SearchResult } from '../lib/search';
+  import { openPeak } from '../lib/peaks.svelte';
+  import { ui } from '../lib/ui.svelte';
 
   let query = $state('');
   let results = $state<SearchResult[]>([]);
@@ -66,6 +68,11 @@
     }
     marker?.remove();
     marker = new Marker({ color: '#d9480f' }).setLngLat([r.lng, r.lat]).addTo(map);
+    // Gipfel gewählt → gleich Aufstiege vorschlagen
+    if (r.kind === 'Gipfel') {
+      ui.view = 'planen';
+      openPeak({ name: r.name, lng: r.lng, lat: r.lat });
+    }
   }
 
   function clear() {

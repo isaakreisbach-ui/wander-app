@@ -13,6 +13,8 @@
   import QrScanner from './components/QrScanner.svelte';
   import ReceiveDialogs from './components/ReceiveDialogs.svelte';
   import OfflineProgress from './components/OfflineProgress.svelte';
+  import PeakPanel from './components/PeakPanel.svelte';
+  import { peakState } from './lib/peaks.svelte';
 
   // Wurde die App mit einem Tour-Link geöffnet? (auch später, wenn am PC ein Link eingefügt wird)
   checkLaunchLink();
@@ -120,7 +122,8 @@
         <span class="grip" aria-hidden="true"></span>
         <span>Karte zeigen ▾</span>
       </button>
-      {#if panelView === 'planen'}<Planen />
+      {#if peakState.peak && panelView === 'planen'}<PeakPanel />
+      {:else if panelView === 'planen'}<Planen />
       {:else if panelView === 'touren'}<Touren />
       {:else if panelView === 'aufzeichnen'}<Aufzeichnen />
       {:else}<Info />{/if}

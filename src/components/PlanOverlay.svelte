@@ -6,6 +6,7 @@
   import { mapState, mapSettings, onStyleReady } from '../lib/map.svelte';
   import { planner } from '../lib/planner.svelte';
   import { POI_LAYERS } from '../lib/poiPopup';
+  import { PEAK_LAYERS } from '../lib/peaks.svelte';
 
   const ROUTE = 'plan-route';
   const HOVER = 'plan-hover';
@@ -192,7 +193,7 @@
       if (menu || wpPopup) { menu = null; wpPopup = null; return; }
       if (!planner.active || onMarker(e)) return;
       // Tipp auf Wasserstelle/Hütte öffnet deren Info – kein neuer Routenpunkt
-      const poiLayers = POI_LAYERS.filter((l) => map.getLayer(l));
+      const poiLayers = [...POI_LAYERS, ...PEAK_LAYERS].filter((l) => map.getLayer(l));
       if (poiLayers.length && map.queryRenderedFeatures(e.point, { layers: poiLayers }).length) return;
       const idx = routeHitAt(map, e);
       if (idx !== null) planner.insert(planner.segmentOf(idx), e.lngLat.lng, e.lngLat.lat);

@@ -5,6 +5,7 @@
   import PlanOverlay from './PlanOverlay.svelte';
   import RecordOverlay from './RecordOverlay.svelte';
   import PoiOverlay from './PoiOverlay.svelte';
+  import PeakOverlay from './PeakOverlay.svelte';
   import FlyoverBar from './FlyoverBar.svelte';
   import { flyover } from '../lib/flyover.svelte';
   import { onMount } from 'svelte';
@@ -119,6 +120,7 @@
   <div class="map" bind:this={container}></div>
 
   <PoiOverlay />
+  <PeakOverlay />
   <PlanOverlay />
   <RecordOverlay />
   {#if flyover.active}<FlyoverBar />{/if}
@@ -147,7 +149,7 @@
         </button>
         <button class="opt" class:sel={mapSettings.pois} onclick={() => { mapSettings.pois = !mapSettings.pois; saveMapSettings(); }}>
           <span class="check" aria-hidden="true">{mapSettings.pois ? '✓' : ''}</span>
-          <span><b>💧 Wasser & 🏠 Hütten</b><small>OpenStreetMap – ab Zoomstufe 11</small></span>
+          <span><b>💧 Wasser, 🏠 Hütten, 👀 Aussicht, 🪑 Bänke</b><small>OpenStreetMap – ab Zoomstufe 11 (Bänke ab 15)</small></span>
         </button>
       </div>
     {/if}

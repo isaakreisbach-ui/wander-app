@@ -11,6 +11,11 @@
   const water = $derived(along.filter((p) => p.kind === 'water'));
   const eat = $derived(along.filter((p) => p.kind === 'hut' || p.kind === 'food' || p.kind === 'shelter'));
   const drinkable = $derived(water.filter((p) => p.drink === 'yes'));
+  const views = $derived(along.filter((p) => p.kind === 'view'));
+  const benches = $derived(along.filter((p) => p.kind === 'bench' && p.off < 60));
+  const restSummary = $derived(
+    `${views.length} Aussichtspunkt${views.length === 1 ? '' : 'e'} · ${benches.length} Bänke am Weg`,
+  );
 
   // Öffnungszeiten: jetzt und – falls in der Wetter-Box ein anderer Tag gewählt ist – am Tourtag
   let open = $state<Record<string, { now: OpenInfo | null; day: OpenInfo | null }>>({});
@@ -107,6 +112,38 @@
     <p class="note">Öffnungszeiten aus OpenStreetMap – von Freiwilligen gepflegt, nicht immer aktuell. Speisekarten und Preise gibt es dort nicht; wenn vorhanden, führt „Speisekarte“ bzw. „Webseite“ zur Hütte. Im Zweifel vorher anrufen.</p>
   {:else}
     <p class="note">Entlang dieser Route ist in OpenStreetMap keine Einkehr eingetragen – Proviant einplanen.</p>
+  {/if}
+</Disclosure>
+
+<Disclosure id="rest" icon="👀" tint="#af52de" title="Aussicht & Rast" summary={restSummary}>
+  {#if views.length || benches.length}
+    <ul class="list">
+      {#each views as p (p.id)}
+        <li>
+          <button class="row" onclick={() => show(p)}>
+            <span class="km">{km(p)}</span>
+            <span class="emoji" aria-hidden="true">👀</span>
+            <span class="txt"><span class="name">{p.name}</span><span class="sub">{p.label} · {off(p)}</span></span>
+            <span class="chev" aria-hidden="true">›</span>
+          </button>
+        </li>
+      {/each}
+      {#if benches.length}
+        <li>
+          <div class="row">
+            <span class="km">{benches.length}×</span>
+            <span class="emoji" aria-hidden="true">🪑</span>
+            <span class="txt">
+              <span class="name">Bänke direkt am Weg</span>
+              <span class="sub">bei km {benches.slice(0, 8).map((b) => b.km.toLocaleString('de-DE', { maximumFractionDigits: 1 })).join(', ')}{benches.length > 8 ? ' …' : ''}</span>
+            </span>
+          </div>
+        </li>
+      {/if}
+    </ul>
+    <p class="note">Bänke erscheinen auf der Karte ab starkem Zoom (Stufe 15).</p>
+  {:else}
+    <p class="note">Entlang dieser Route sind keine Aussichtspunkte oder Bänke eingetragen.</p>
   {/if}
 </Disclosure>
 

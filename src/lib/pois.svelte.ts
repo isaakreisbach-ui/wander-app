@@ -6,8 +6,9 @@
 // Webseite oder Speisekarte. Öffnungszeiten sind von Freiwilligen gepflegt und nicht immer aktuell.
 
 import { distance, type Pt } from './geo';
+import { overpass, type OsmEl } from './overpass';
 
-export type PoiKind = 'water' | 'hut' | 'food' | 'shelter';
+export type PoiKind = 'water' | 'hut' | 'food' | 'shelter' | 'view' | 'bench';
 
 export type Poi = {
   id: string;
@@ -27,9 +28,8 @@ export type Poi = {
 };
 
 const CELL = 0.05;
-const CACHE_PREFIX = 'wander.poi.v1.';
+const CACHE_PREFIX = 'wander.poi.v2.'; // v2: mit Bänken und Aussichtspunkten
 const FRESH_MS = 7 * 24 * 3600 * 1000;
-const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 
 export const poiState = $state<{ pois: Poi[]; loading: number; error: string | null }>({ pois: [], loading: 0, error: null });
 const loadedCells = new Set<string>();
@@ -68,42 +68,43 @@ export async function loadCells(keys: string[], max = 40) {
   }
   if (!stale.length || !navigator.onLine) return;
 
-  // dann übers Netz (höchstens 2 gleichzeitig – Fair Use)
-  const queue = [...stale];
-  const worker = async () => {
-    for (let k = queue.shift(); k; k = queue.shift()) {
-      if (inflight.has(k)) { await inflight.get(k); continue; }
-      const p = fetchCell(k).finally(() => inflight.delete(k));
-      inflight.set(k, p);
-      await p;
-    }
-  };
-  await Promise.all([worker(), worker()]);
+  // dann übers Netz: alle fehlenden Kacheln in EINER Anfrage (schont die Server), nacheinander in Gruppen
+  const todoNet = stale.filter((k) => !inflight.has(k));
+  const waitFor = stale.filter((k) => inflight.has(k)).map((k) => inflight.get(k)!);
+  for (let i = 0; i < todoNet.length; i += 30) {
+    const group = todoNet.slice(i, i + 30);
+    const p = fetchCells(group).finally(() => group.forEach((k) => inflight.delete(k)));
+    group.forEach((k) => inflight.set(k, p));
+    await p;
+  }
+  await Promise.all(waitFor);
 }
 
-async function fetchCell(key: string) {
-  const { w, s, e, n } = cellBbox(key);
+async function fetchCells(keys: string[]) {
+  const boxes = keys.map(cellBbox);
+  const w = Math.min(...boxes.map((b) => b.w)), s = Math.min(...boxes.map((b) => b.s));
+  const e = Math.max(...boxes.map((b) => b.e)), n = Math.max(...boxes.map((b) => b.n));
   const bb = `(${s.toFixed(4)},${w.toFixed(4)},${n.toFixed(4)},${e.toFixed(4)})`;
   const q = `[out:json][timeout:25];(` +
     `nwr["amenity"="drinking_water"]${bb};nwr["natural"="spring"]${bb};nwr["man_made"="water_tap"]${bb};` +
     `nwr["amenity"="water_point"]${bb};nwr["amenity"="fountain"]["drinking_water"="yes"]${bb};` +
     `nwr["tourism"~"^(alpine_hut|wilderness_hut)$"]${bb};nwr["amenity"~"^(restaurant|cafe|biergarten|pub)$"]${bb};` +
     `nwr["amenity"="shelter"]["shelter_type"~"^(basic_hut|weather_shelter|lean_to)$"]${bb};` +
+    `node["tourism"="viewpoint"]${bb};node["amenity"="bench"]${bb};` +
     `);out center tags;`;
   poiState.loading++;
   try {
-    let data: { elements: OsmEl[] } | null = null;
-    for (const ep of ENDPOINTS) {
-      try {
-        const res = await fetch(`${ep}?data=${encodeURIComponent(q)}`);
-        if (res.ok) { data = await res.json(); break; }
-      } catch { /* nächster Server */ }
-    }
-    if (!data) throw new Error('OpenStreetMap-Server gerade nicht erreichbar');
-    const pois = data.elements.map(toPoi).filter((p): p is Poi => !!p);
-    try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), pois })); } catch { /* voll */ }
+    const elements = await overpass(q);
+    const pois = elements.map(toPoi).filter((p): p is Poi => !!p);
+    // auf die einzelnen Kacheln verteilen und jede für sich speichern (auch leere – dann wird nicht erneut gefragt)
+    const now = Date.now();
+    keys.forEach((key, i) => {
+      const b = boxes[i];
+      const inCell = pois.filter((p) => p.lng >= b.w && p.lng < b.e && p.lat >= b.s && p.lat < b.n);
+      try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: now, pois: inCell })); } catch { /* voll */ }
+      loadedCells.add(key);
+    });
     addPois(pois);
-    loadedCells.add(key);
     poiState.error = null;
   } catch (err) {
     poiState.error = (err as Error).message;
@@ -124,7 +125,6 @@ function addPois(list: Poi[]) {
 
 // ---------- OSM-Daten deuten ----------
 
-type OsmEl = { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> };
 
 function toPoi(el: OsmEl): Poi | null {
   const t = el.tags ?? {};
@@ -147,6 +147,14 @@ function toPoi(el: OsmEl): Poi | null {
   if (t.tourism === 'alpine_hut') return { ...base, kind: 'hut', name: t.name ?? 'Berghütte', label: 'Bewirtschaftete Hütte', drink: null };
   if (t.tourism === 'wilderness_hut') return { ...base, kind: 'shelter', name: t.name ?? 'Selbstversorgerhütte', label: 'Unbewirtschaftete Hütte', drink: null };
   if (t.amenity === 'shelter') return { ...base, kind: 'shelter', name: t.name ?? 'Schutzhütte', label: 'Schutzhütte', drink: null };
+  if (t.tourism === 'viewpoint') {
+    const dir = t.direction ? ` · Blick nach ${t.direction}` : '';
+    return { ...base, kind: 'view', name: t.name ?? 'Aussichtspunkt', label: `Aussichtspunkt${dir}`, drink: null };
+  }
+  if (t.amenity === 'bench') {
+    const extra = [t.backrest === 'yes' ? 'mit Lehne' : '', t.covered === 'yes' ? 'überdacht' : ''].filter(Boolean).join(', ');
+    return { ...base, kind: 'bench', name: t.name ?? 'Bank', label: `Bank${extra ? ` (${extra})` : ''}`, drink: null };
+  }
   const food: Record<string, string> = { restaurant: 'Restaurant', cafe: 'Café', biergarten: 'Biergarten', pub: 'Gaststätte' };
   if (t.amenity && food[t.amenity]) {
     const hutLike = /hütte|baude|alm|hutte|rifugio|malga|baita/i.test(t.name ?? '');
@@ -232,4 +240,6 @@ export const POI_STYLE: Record<PoiKind, { emoji: string; color: string; name: st
   hut: { emoji: '🏠', color: '#a2541c', name: 'Hütte' },
   food: { emoji: '🍽️', color: '#ff9500', name: 'Einkehr' },
   shelter: { emoji: '🛖', color: '#8e8e93', name: 'Schutzhütte' },
+  view: { emoji: '👀', color: '#af52de', name: 'Aussicht' },
+  bench: { emoji: '🪑', color: '#8d6e63', name: 'Bank' },
 };

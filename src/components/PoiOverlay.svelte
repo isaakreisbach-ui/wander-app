@@ -72,10 +72,18 @@
         layout: layout(15), paint,
       });
     }
+    // Bänke gibt es sehr viele – erst ganz nah zeigen, ohne Namen
+    if (!map.getLayer('pois-bench')) {
+      map.addLayer({
+        id: 'pois-bench', type: 'symbol', source: SRC, minzoom: 15,
+        filter: ['==', ['get', 'kind'], 'bench'],
+        layout: { ...layout(99), 'icon-size': 0.7, 'icon-allow-overlap': false }, paint,
+      });
+    }
     if (!map.getLayer('pois-main')) {
       map.addLayer({
         id: 'pois-main', type: 'symbol', source: SRC, minzoom: 11,
-        filter: ['any', ['!=', ['get', 'kind'], 'food'], ['==', ['get', 'onRoute'], true]],
+        filter: ['all', ['!=', ['get', 'kind'], 'bench'], ['any', ['!=', ['get', 'kind'], 'food'], ['==', ['get', 'onRoute'], true]]],
         layout: layout(14), paint,
       });
     }
