@@ -1,15 +1,48 @@
 <script lang="ts">
-  import { planner } from '../lib/planner.svelte';
+  import { planner, defaultTourName } from '../lib/planner.svelte';
   import { formatDistance, formatDuration } from '../lib/geo';
+  import { exportTour, confirmDiscard } from '../lib/tours';
+  import { toast } from '../lib/ui.svelte';
   import ElevationProfile from '../components/ElevationProfile.svelte';
 
   const coarse = window.matchMedia('(pointer: coarse)').matches;
   const s = $derived(planner.stats);
   const n = $derived(planner.waypoints.length);
+  let saving = $state(false);
 
   function confirmClear() {
     if (confirm('Alle Punkte dieser Tour löschen? (Lässt sich mit „Rückgängig“ zurückholen.)')) planner.clear();
   }
+
+  async function save(asNew = false) {
+    if (n < 2 || saving) return;
+    saving = true;
+    try {
+      const t = await planner.save(asNew);
+      toast(asNew ? `Als neue Tour „${t.name}“ gespeichert` : `„${t.name}“ gespeichert`);
+    } catch (e) {
+      alert(`Speichern fehlgeschlagen: ${(e as Error).message}`);
+    } finally {
+      saving = false;
+    }
+  }
+
+  function newTour() {
+    if (!confirmDiscard()) return;
+    planner.newTour();
+  }
+
+  // Strg+S speichert
+  $effect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        save();
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  });
 </script>
 
 {#if n === 0}
@@ -27,6 +60,30 @@
     <p class="muted">Tipp: Mit der Suche oben springst du schnell zum Startort.</p>
   </div>
 {:else}
+  <div class="savebar">
+    <input
+      class="name"
+      type="text"
+      value={planner.name}
+      oninput={(e) => planner.setName(e.currentTarget.value)}
+      placeholder={defaultTourName()}
+      aria-label="Name der Tour"
+      enterkeyhint="done"
+    />
+    <button class="btn save" onclick={() => save()} disabled={n < 2 || saving || (!planner.dirty && !!planner.tourId)}>
+      {saving ? '…' : !planner.dirty && planner.tourId ? '✓ Gespeichert' : 'Speichern'}
+    </button>
+  </div>
+  <div class="savemeta">
+    {#if planner.tourId}
+      {planner.dirty ? 'Ungespeicherte Änderungen' : 'Gespeichert unter „Touren“'}
+      · <button class="link" onclick={() => save(true)} disabled={n < 2}>Als Kopie speichern</button>
+    {:else}
+      Neue Tour – noch nicht gespeichert
+    {/if}
+    · <button class="link" onclick={newTour}>Neue Tour</button>
+  </div>
+
   <div class="stats" aria-live="polite">
     <div class="stat"><span class="v">{s ? formatDistance(s.meters) : '–'}</span><span class="l">Strecke</span></div>
     <div class="stat"><span class="v">{s ? `${Math.round(s.up)} m` : '–'}</span><span class="l">Aufstieg</span></div>
@@ -58,7 +115,8 @@
     <button class="tool" onclick={() => planner.undo()} disabled={!planner.canUndo} title="Rückgängig (Strg+Z)">↶<span>Zurück</span></button>
     <button class="tool" onclick={() => planner.redo()} disabled={!planner.canRedo} title="Wiederholen (Strg+Y)">↷<span>Vor</span></button>
     <button class="tool" onclick={() => planner.reverse()} disabled={n < 2} title="Richtung umkehren">⇄<span>Umkehren</span></button>
-    <button class="tool danger" onclick={confirmClear} title="Alle Punkte löschen">🗑<span>Löschen</span></button>
+    <button class="tool" onclick={() => exportTour({ name: planner.name || defaultTourName(), route: planner.route, waypoints: planner.waypoints })} disabled={n < 2} title="Als GPX-Datei exportieren">⤓<span>GPX</span></button>
+    <button class="tool danger" onclick={confirmClear} title="Alle Punkte löschen">🗑<span>Leeren</span></button>
   </div>
 
   <label class="switch">
@@ -67,7 +125,7 @@
   </label>
 
   <p class="muted small">Gehzeit nach DAV-Formel (4 km/h, 300 Hm/h bergauf, 500 Hm/h bergab), ohne Pausen.
-    Routing: BRouter · Speichern unter Namen kommt im nächsten Schritt – der Entwurf bleibt bis dahin erhalten.</p>
+    Routing: BRouter.{#if !coarse}{' '}Speichern: <kbd>Strg+S</kbd>.{/if}</p>
 {/if}
 
 <style>
@@ -93,7 +151,20 @@
 
   .profile-card { padding: 8px 6px 4px; }
 
-  .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .savebar { display: flex; gap: 8px; margin-bottom: 4px; }
+  .name {
+    flex: 1; min-width: 0; height: 48px; padding: 0 12px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    font: inherit; font-size: 16px; font-weight: 650;
+  }
+  .name:focus { outline: 2px solid var(--green); border-color: transparent; }
+  .save { min-height: 48px; padding: 0 16px; white-space: nowrap; }
+  .save:disabled { opacity: .55; cursor: default; }
+  .savemeta { font-size: .8rem; color: var(--muted); margin-bottom: 10px; }
+  .link { border: 0; background: none; padding: 0; color: var(--green); font-weight: 650; text-decoration: underline; font-size: inherit; }
+  .link:disabled { color: #aaa; }
+
+  .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px; }
   .tool {
     min-height: 56px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
     display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.3rem; line-height: 1;
@@ -109,5 +180,6 @@
 
   @media (pointer: fine) {
     .tool { min-height: 46px; }
+    .name, .save { height: 40px; min-height: 40px; }
   }
 </style>

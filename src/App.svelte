@@ -6,8 +6,9 @@
   import Info from './views/Info.svelte';
   import { requestPersistentStorage } from './lib/status.svelte';
   import { planner } from './lib/planner.svelte';
+  import { ui, type View } from './lib/ui.svelte';
+  import { importGpxFiles } from './lib/tours';
 
-  type View = 'karte' | 'planen' | 'touren' | 'aufzeichnen' | 'info';
   const tabs: { id: View; label: string; icon: string; mobileOnly?: boolean }[] = [
     { id: 'karte', label: 'Karte', icon: '🧭', mobileOnly: true },
     { id: 'planen', label: 'Planen', icon: '🗺️' },
@@ -18,11 +19,34 @@
 
   const desktopQuery = window.matchMedia('(min-width: 900px)');
   let desktop = $state(desktopQuery.matches);
-  let view = $state<View>(desktopQuery.matches ? 'planen' : 'karte');
   let online = $state(navigator.onLine);
+  let dragging = $state(false);
 
   // Am PC gibt es keinen eigenen „Karte“-Bereich – die Karte ist immer sichtbar.
-  const panelView = $derived<View>(view === 'karte' && desktop ? 'planen' : view);
+  const panelView = $derived<View>(ui.view === 'karte' && desktop ? 'planen' : ui.view);
+
+  // GPX-Dateien am PC einfach ins Fenster ziehen
+  $effect(() => {
+    const isFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files');
+    const over = (e: DragEvent) => { if (isFiles(e)) { e.preventDefault(); dragging = true; } };
+    const leave = (e: DragEvent) => { if (!e.relatedTarget) dragging = false; };
+    const drop = (e: DragEvent) => {
+      if (!isFiles(e)) return;
+      e.preventDefault();
+      dragging = false;
+      const files = Array.from(e.dataTransfer!.files).filter((f) => /\.gpx$/i.test(f.name));
+      if (files.length) importGpxFiles(files);
+      else alert('Bitte eine GPX-Datei (.gpx) hineinziehen.');
+    };
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('drop', drop);
+    return () => {
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('drop', drop);
+    };
+  });
 
   // Nur im Bereich „Planen“ setzt ein Klick in die Karte Punkte
   $effect(() => {
@@ -63,7 +87,7 @@
         class:active={panelView === t.id}
         class:mobile-only={t.mobileOnly}
         aria-current={panelView === t.id ? 'page' : undefined}
-        onclick={() => (view = t.id)}
+        onclick={() => (ui.view = t.id)}
       >
         <span class="icon" aria-hidden="true">{t.icon}</span>
         <span class="label">{t.label}</span>
@@ -73,7 +97,7 @@
 
   {#if panelView !== 'karte'}
     <section class="panel" class:compact={panelView === 'planen'}>
-      <button class="sheet-close" onclick={() => (view = 'karte')} aria-label="Zur Karte">
+      <button class="sheet-close" onclick={() => (ui.view = 'karte')} aria-label="Zur Karte">
         <span class="grip" aria-hidden="true"></span>
         <span>Karte zeigen ▾</span>
       </button>
@@ -83,9 +107,25 @@
       {:else}<Info />{/if}
     </section>
   {/if}
+
+  {#if ui.toast}<div class="app-toast" role="status">{ui.toast}</div>{/if}
+  {#if dragging}<div class="dropzone">GPX-Datei hier loslassen zum Importieren</div>{/if}
 </div>
 
 <style>
+  .app-toast {
+    position: fixed; z-index: 20; left: 50%; transform: translateX(-50%);
+    top: calc(64px + var(--safe-top));
+    max-width: min(440px, calc(100% - 24px));
+    background: #1f2a22; color: #fff; padding: 10px 16px; border-radius: 12px;
+    font-weight: 600; font-size: .92rem; box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+  }
+  .dropzone {
+    position: fixed; inset: 12px; z-index: 30; pointer-events: none;
+    border: 4px dashed var(--green); border-radius: 20px;
+    background: rgba(227, 239, 230, .85);
+    display: grid; place-items: center; font-size: 1.4rem; font-weight: 750; color: var(--green-dark);
+  }
   .shell {
     height: 100%;
     display: grid;

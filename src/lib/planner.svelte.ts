@@ -1,23 +1,19 @@
-// Zustand der gerade geplanten Tour: Wegpunkte, berechnete Route, Werte, Rückgängig.
+// Zustand der gerade geplanten Tour: Wegpunkte, berechnete Route, Werte, Rückgängig, Speichern.
 // Der Entwurf wird laufend im Gerät gespeichert, damit nach einem Neustart nichts fehlt.
 
 import {
-  cumulative, climb, walkingTimeHours, difficulty, maxGrade, type Pt, type Difficulty,
+  cumulative, climb, walkingTimeHours, difficulty, maxGrade, anchorIndices, type Pt,
 } from './geo';
 import { routeSegment, straightSegment, RoutingError } from './routing';
+import { db, newTourId, type Tour, type TourStats, type Waypoint } from './db';
 
-export type Waypoint = { id: string; lng: number; lat: number };
+export type { Waypoint };
 
-export type RouteStats = {
-  meters: number; up: number; down: number; hours: number;
-  minEle: number | null; maxEle: number | null; difficulty: Difficulty;
-};
-
-const DRAFT_KEY = 'wander.plan.draft.v1';
+const DRAFT_KEY = 'wander.plan.draft.v2';
 let idCounter = 0;
 const newId = () => `wp${Date.now().toString(36)}${(idCounter++).toString(36)}`;
 
-function computeStats(route: Pt[], cum: number[]): RouteStats | null {
+function computeStats(route: Pt[], cum: number[]): TourStats | null {
   if (route.length < 2) return null;
   const meters = cum[cum.length - 1];
   const { up, down } = climb(route);
@@ -32,6 +28,33 @@ function computeStats(route: Pt[], cum: number[]): RouteStats | null {
   return { meters, up, down, hours, minEle, maxEle, difficulty: difficulty(meters, up, hours, maxGrade(route, cum)) };
 }
 
+/**
+ * Fremde Strecke (GPX, Link) als Tour anlegen: wenige Stützpunkte werden zu Wegpunkten,
+ * die Original-Strecke bleibt zwischen ihnen erhalten, bis man etwas ändert.
+ */
+export function tourFromTrack(name: string, points: Pt[], source: Tour['source']): Tour {
+  const idx = anchorIndices(points);
+  const now = Date.now();
+  return {
+    id: newTourId(),
+    kind: 'plan',
+    name,
+    createdAt: now,
+    updatedAt: now,
+    waypoints: idx.map((i) => ({ id: newId(), lng: points[i][0], lat: points[i][1] })),
+    followTrails: true,
+    route: points,
+    segStart: idx.slice(0, -1),
+    stats: computeStats(points, cumulative(points)),
+    start: [points[0][0], points[0][1]],
+    source,
+  };
+}
+
+export function defaultTourName() {
+  return `Tour vom ${new Date().toLocaleDateString('de-DE')}`;
+}
+
 class Planner {
   /** true, solange der Bereich „Planen“ offen ist – nur dann setzt ein Klick in die Karte Punkte */
   active = $state(false);
@@ -44,6 +67,12 @@ class Planner {
   segStart = $state.raw<number[]>([]);
   /** Index des Routenpunkts, über dem Maus/Finger gerade im Profil oder auf der Karte ist */
   hover = $state<number | null>(null);
+
+  /** Gespeicherte Tour, die gerade bearbeitet wird (null = neue, noch nicht gespeicherte Tour) */
+  tourId = $state<string | null>(null);
+  name = $state('');
+  dirty = $state(false);
+  private meta: Pick<Tour, 'createdAt' | 'source' | 'plannedFor' | 'notes'> | null = null;
 
   cum = $derived(cumulative(this.route));
   stats = $derived(computeStats(this.route, this.cum));
@@ -60,9 +89,14 @@ class Planner {
   constructor() {
     try {
       const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
-      if (d?.waypoints?.length) {
-        this.waypoints = d.waypoints;
+      if (d) {
+        this.waypoints = d.waypoints ?? [];
         this.followTrails = d.followTrails ?? true;
+        this.tourId = d.tourId ?? null;
+        this.name = d.name ?? '';
+        this.dirty = d.dirty ?? false;
+        this.meta = d.meta ?? null;
+        if (d.route?.length && d.segStart) this.seed(this.waypoints, d.route, d.segStart);
         queueMicrotask(() => this.recompute());
       }
     } catch { /* kaputter Entwurf – ignorieren */ }
@@ -79,6 +113,7 @@ class Planner {
 
   private apply(next: Waypoint[]) {
     this.waypoints = next;
+    this.dirty = true;
     this.canUndo = this.undoStack.length > 0;
     this.canRedo = this.redoStack.length > 0;
     this.saveDraft();
@@ -134,8 +169,15 @@ class Planner {
 
   setFollowTrails(v: boolean) {
     this.followTrails = v;
+    this.dirty = true;
     this.saveDraft();
     this.recompute();
+  }
+
+  setName(v: string) {
+    this.name = v;
+    this.dirty = true;
+    this.saveDraft();
   }
 
   /** Zu welchem Abschnitt gehört Routenpunkt `idx`? */
@@ -145,10 +187,90 @@ class Planner {
     return seg;
   }
 
+  // ---------- Neu / Öffnen / Speichern ----------
+
+  private reset() {
+    this.abort?.abort();
+    this.generation++;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.canUndo = this.canRedo = false;
+    this.error = null;
+    this.routing = false;
+    this.hover = null;
+  }
+
+  newTour() {
+    this.reset();
+    this.waypoints = [];
+    this.route = [];
+    this.segStart = [];
+    this.tourId = null;
+    this.name = '';
+    this.meta = null;
+    this.dirty = false;
+    this.saveDraft();
+  }
+
+  /** Gespeicherte Tour zum Bearbeiten öffnen – ohne neu zu routen */
+  open(t: Tour) {
+    this.reset();
+    this.followTrails = t.followTrails;
+    this.seed(t.waypoints, t.route, t.segStart);
+    this.waypoints = t.waypoints;
+    this.route = t.route;
+    this.segStart = t.segStart;
+    this.tourId = t.id;
+    this.name = t.name;
+    this.meta = { createdAt: t.createdAt, source: t.source, plannedFor: t.plannedFor, notes: t.notes };
+    this.dirty = false;
+    this.saveDraft();
+  }
+
+  /** Speichert die Tour. `asNew` legt eine Kopie an, statt die bestehende zu überschreiben. */
+  async save(asNew = false): Promise<Tour> {
+    const now = Date.now();
+    const id = !asNew && this.tourId ? this.tourId : newTourId();
+    const name = this.name.trim() || defaultTourName();
+    const tour: Tour = {
+      id,
+      kind: 'plan',
+      name,
+      createdAt: !asNew && this.meta?.createdAt ? this.meta.createdAt : now,
+      updatedAt: now,
+      waypoints: $state.snapshot(this.waypoints) as Waypoint[],
+      followTrails: this.followTrails,
+      route: $state.snapshot(this.route) as Pt[],
+      segStart: [...this.segStart],
+      stats: this.stats ? { ...this.stats } : null,
+      start: this.waypoints.length ? [this.waypoints[0].lng, this.waypoints[0].lat] : null,
+      source: this.meta?.source ?? 'app',
+      plannedFor: this.meta?.plannedFor,
+      notes: this.meta?.notes,
+    };
+    await db.tours.put(tour);
+    this.tourId = id;
+    this.name = name;
+    this.meta = { createdAt: tour.createdAt, source: tour.source, plannedFor: tour.plannedFor, notes: tour.notes };
+    this.dirty = false;
+    this.saveDraft();
+    return tour;
+  }
+
   // ---------- Route berechnen ----------
 
-  private key(a: Waypoint, b: Waypoint) {
-    return `${this.followTrails ? 'r' : 's'}:${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}`;
+  private key(a: Waypoint, b: Waypoint, follow = this.followTrails) {
+    return `${follow ? 'r' : 's'}:${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}`;
+  }
+
+  /** Bekannte Abschnitte in den Zwischenspeicher legen, damit nicht neu geroutet wird */
+  private seed(wps: Waypoint[], route: Pt[], segStart: number[]) {
+    for (let i = 0; i < wps.length - 1; i++) {
+      const from = segStart[i];
+      const to = i + 1 < segStart.length ? segStart[i + 1] : route.length - 1;
+      if (from === undefined || to === undefined || to <= from) continue;
+      this.cache.set(this.key(wps[i], wps[i + 1]), route.slice(from, to + 1));
+    }
   }
 
   async recompute() {
@@ -162,6 +284,7 @@ class Planner {
       this.route = wps.length === 1 ? [[wps[0].lng, wps[0].lat]] : [];
       this.segStart = [];
       this.routing = false;
+      this.saveDraft();
       return;
     }
 
@@ -185,8 +308,10 @@ class Planner {
           this.cache.set(k, seg);
         } catch (e) {
           if ((e as Error).name === 'AbortError') return;
-          errors.push(e instanceof RoutingError ? e.message : 'Keine Verbindung zum Routenserver.');
-          // Ersatz: Luftlinie, damit die Tour trotzdem sichtbar ist
+          errors.push(
+            e instanceof RoutingError ? e.message
+              : navigator.onLine ? 'Keine Verbindung zum Routenserver.' : 'Ohne Internet kann keine Route berechnet werden.',
+          );
           fallback.set(k, await straightSegment([a.lng, a.lat], [b.lng, b.lat], ctrl.signal).catch(() => [[a.lng, a.lat], [b.lng, b.lat]] as Pt[]));
         }
       }
@@ -199,17 +324,30 @@ class Planner {
     for (const [a, b] of pairs) {
       const k = this.key(a, b);
       const seg = this.cache.get(k) ?? fallback.get(k) ?? [[a.lng, a.lat], [b.lng, b.lat]];
-      segStart.push(Math.max(0, route.length - (route.length ? 1 : 0)));
+      segStart.push(route.length ? route.length - 1 : 0);
       route.push(...(route.length ? seg.slice(1) : seg));
     }
     this.segStart = segStart;
     this.route = route;
     this.routing = false;
     if (errors.length) this.error = `${errors[0]} Dieser Abschnitt ist als Luftlinie eingezeichnet.`;
+    this.saveDraft();
   }
 
   private saveDraft() {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ waypoints: this.waypoints, followTrails: this.followTrails }));
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        waypoints: this.waypoints, followTrails: this.followTrails,
+        tourId: this.tourId, name: this.name, dirty: this.dirty, meta: this.meta,
+        route: this.route, segStart: this.segStart,
+      }));
+    } catch {
+      // Speicher voll (sehr lange Route) – dann nur die Wegpunkte merken
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        waypoints: this.waypoints, followTrails: this.followTrails,
+        tourId: this.tourId, name: this.name, dirty: this.dirty, meta: this.meta,
+      }));
+    }
   }
 }
 

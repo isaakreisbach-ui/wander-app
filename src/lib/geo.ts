@@ -87,6 +87,53 @@ export function formatDuration(hours: number): string {
   return h ? `${h}:${String(m).padStart(2, '0')} h` : `${m} min`;
 }
 
+/**
+ * Douglas-Peucker: Indizes der Punkte, die die Form der Strecke mit höchstens
+ * `tolerance` Metern Abweichung beschreiben (erster und letzter Punkt immer dabei).
+ */
+export function simplifyIndices(pts: Pt[], tolerance: number): number[] {
+  if (pts.length <= 2) return pts.map((_, i) => i);
+  const lat0 = (pts[0][1] * Math.PI) / 180;
+  const mx = 111320 * Math.cos(lat0), my = 110540;
+  const xy = pts.map((p) => [p[0] * mx, p[1] * my]);
+  const keep = new Uint8Array(pts.length);
+  keep[0] = keep[pts.length - 1] = 1;
+  const stack: [number, number][] = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop()!;
+    const [ax, ay] = xy[a], [bx, by] = xy[b];
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let maxD = 0, idx = -1;
+    for (let i = a + 1; i < b; i++) {
+      const [px, py] = xy[i];
+      let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const ex = ax + t * dx - px, ey = ay + t * dy - py;
+      const d = ex * ex + ey * ey;
+      if (d > maxD) { maxD = d; idx = i; }
+    }
+    if (idx >= 0 && maxD > tolerance * tolerance) {
+      keep[idx] = 1;
+      stack.push([a, idx], [idx, b]);
+    }
+  }
+  const out: number[] = [];
+  keep.forEach((k, i) => { if (k) out.push(i); });
+  return out;
+}
+
+/** Wenige gut verteilte Stützpunkte für eine importierte Strecke (zum späteren Bearbeiten) */
+export function anchorIndices(pts: Pt[], maxCount = 25): number[] {
+  let tol = 15;
+  let idx = simplifyIndices(pts, tol);
+  while (idx.length > maxCount && tol < 5000) {
+    tol *= 1.6;
+    idx = simplifyIndices(pts, tol);
+  }
+  return idx;
+}
+
 /** Punkte entlang einer Geraden, ca. alle `step` Meter */
 export function interpolate(a: [number, number], b: [number, number], step = 50): Pt[] {
   const n = Math.max(1, Math.min(99, Math.ceil(distance(a, b) / step)));
