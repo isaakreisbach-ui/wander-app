@@ -15,6 +15,7 @@
     };
   }
   import ElevationProfile from '../components/ElevationProfile.svelte';
+  import WeatherCard from '../components/WeatherCard.svelte';
 
   const coarse = window.matchMedia('(pointer: coarse)').matches;
   const s = $derived(planner.stats);
@@ -130,6 +131,10 @@
     <button class="tool" onclick={() => exportTour({ name: planner.name || defaultTourName(), route: planner.route, waypoints: planner.waypoints })} disabled={n < 2} title="Als GPX-Datei exportieren">⤓<span>GPX</span></button>
     <button class="tool danger" onclick={confirmClear} title="Alle Punkte löschen">🗑<span>Leeren</span></button>
   </div>
+
+  {#if planner.route.length > 1 && !planner.routing}
+    <WeatherCard route={planner.route} />
+  {/if}
 
   <label class="switch">
     <input type="checkbox" checked={planner.followTrails} onchange={(e) => planner.setFollowTrails(e.currentTarget.checked)} />
