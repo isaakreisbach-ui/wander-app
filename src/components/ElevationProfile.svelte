@@ -67,9 +67,14 @@
       hooks: {
         setCursor: [
           (u) => {
+            // Cursor wurde von außen (Karte, 3D-Flug) gesetzt → nicht zurückschreiben,
+            // sonst schaukeln sich Karte und Profil gegenseitig auf
+            if (applying) return;
             const i = u.cursor.idx;
+            const v = i === null || i === undefined ? null : indexMap[i] ?? null;
+            if (v === hover) return;
             fromPlot = true;
-            hover = i === null || i === undefined ? null : indexMap[i] ?? null;
+            hover = v;
             queueMicrotask(() => (fromPlot = false));
           },
         ],
@@ -106,10 +111,13 @@
     };
   });
 
+  let applying = false;
+
   // Neue Route → Daten tauschen
   $effect(() => {
     const d = data();
-    plot?.setData(d);
+    applying = true;
+    try { plot?.setData(d); } finally { applying = false; }
   });
 
   // Hover von der Karte → Cursor im Profil setzen
@@ -122,7 +130,8 @@
     while (j < indexMap.length - 1 && indexMap[j + 1] <= h) j++;
     const x = plot.valToPos(plot.data[0][j] as number, 'x');
     const y = plot.valToPos((plot.data[1][j] as number) ?? 0, 'y');
-    plot.setCursor({ left: x, top: y }, false);
+    applying = true;
+    try { plot.setCursor({ left: x, top: y }, false); } finally { applying = false; }
   });
 </script>
 

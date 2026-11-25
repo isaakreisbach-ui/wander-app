@@ -17,6 +17,17 @@
   import ElevationProfile from '../components/ElevationProfile.svelte';
   import WeatherCard from '../components/WeatherCard.svelte';
   import OfflineTourCard from '../components/OfflineTourCard.svelte';
+  import { flyover } from '../lib/flyover.svelte';
+
+  function start3d() {
+    if (!navigator.onLine) {
+      alert('Für den 3D-Flug wird Internet benötigt (Geländedaten).');
+      return;
+    }
+    // Auf dem Handy die ganze Karte zeigen
+    if (!window.matchMedia('(min-width: 900px)').matches) ui.view = 'karte';
+    flyover.start();
+  }
 
   const coarse = window.matchMedia('(pointer: coarse)').matches;
   const s = $derived(planner.stats);
@@ -130,6 +141,9 @@
     <div class="card profile-card">
       <ElevationProfile route={planner.route} cum={planner.cum} bind:hover={planner.hover} height={coarse ? 120 : 160} />
     </div>
+    <button class="btn secondary fly" onclick={start3d} disabled={planner.routing || flyover.active}>
+      🎥 {flyover.active ? '3D-Flug läuft …' : '3D-Flug über die Tour'}
+    </button>
   {/if}
 
   <div class="tools">
@@ -177,6 +191,7 @@
   .error { color: var(--warn); background: #fff4e0; border-radius: 10px; padding: 8px 10px; font-size: .9rem; }
 
   .profile-card { padding: 8px 6px 4px; }
+  .fly { width: 100%; margin: -4px 0 12px; }
   .legend { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; background: #fff4e0; border-radius: 10px; padding: 8px 10px; }
   .dash {
     flex: none; width: 34px; height: 5px; margin-top: 7px;

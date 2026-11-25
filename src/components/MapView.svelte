@@ -4,6 +4,8 @@
   import SearchBox from './SearchBox.svelte';
   import PlanOverlay from './PlanOverlay.svelte';
   import RecordOverlay from './RecordOverlay.svelte';
+  import FlyoverBar from './FlyoverBar.svelte';
+  import { flyover } from '../lib/flyover.svelte';
   import { onMount } from 'svelte';
   import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -117,6 +119,7 @@
 
   <PlanOverlay />
   <RecordOverlay />
+  {#if flyover.active}<FlyoverBar />{/if}
 
   <div class="search-slot"><SearchBox /></div>
 
