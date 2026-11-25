@@ -1,0 +1,58 @@
+:root {
+  --green: #1f5f3f;
+  --green-dark: #154530;
+  --green-soft: #e3efe6;
+  --amber: #f2b33d;
+  --bg: #f4f6f3;
+  --surface: #ffffff;
+  --text: #111611;
+  --muted: #4b564d;
+  --line: #d4ddd5;
+  --ok: #1d7a3e;
+  --warn: #a85d00;
+  --bad: #b3261e;
+  --radius: 14px;
+  --sidebar: 380px;
+  --tabbar: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; height: 100%; }
+body { overscroll-behavior: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
+h2 { font-size: 1.25rem; }
+p { margin: 0 0 .75em; }
+a { color: var(--green); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px; padding: 0 20px;
+  border-radius: 12px; border: 2px solid var(--green);
+  background: var(--green); color: #fff; font-weight: 650;
+}
+.btn.secondary { background: var(--surface); color: var(--green); }
+.btn:active { transform: translateY(1px); }
+
+/* Desktop braucht keine riesigen Knöpfe */
+@media (min-width: 900px) and (pointer: fine) {
+  :root { font-size: 15px; }
+  .btn { min-height: 40px; }
+}
