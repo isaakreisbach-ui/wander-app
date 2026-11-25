@@ -5,11 +5,12 @@
 
 import type { Map as MlMap, StyleSpecification } from 'maplibre-gl';
 
-export type BaseId = 'standard' | 'topo';
+export type BaseId = 'standard' | 'topo' | 'satellit';
 
 export const BASES: { id: BaseId; label: string; hint: string }[] = [
   { id: 'standard', label: 'Standard', hint: 'OpenFreeMap – später auch offline' },
   { id: 'topo', label: 'Topo', hint: 'OpenTopoMap – mit Höhenlinien, nur online' },
+  { id: 'satellit', label: 'Satellit', hint: 'Esri Luftbild – nur online' },
 ];
 
 const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
@@ -17,6 +18,23 @@ const OSM_ATTR = '© <a href="https://www.openstreetmap.org/copyright" target="_
 
 export function styleFor(base: BaseId): string | StyleSpecification {
   if (base === 'standard') return 'https://tiles.openfreemap.org/styles/liberty';
+  if (base === 'satellit') {
+    // Esri World Imagery: nur online ansehen, kein Offline-Download (Nutzungsbedingungen)
+    return {
+      version: 8,
+      glyphs: GLYPHS,
+      sources: {
+        satellit: {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 18,
+          attribution: 'Luftbild: © Esri, Maxar, Earthstar Geographics, GIS User Community',
+        },
+      },
+      layers: [{ id: 'satellit', type: 'raster', source: 'satellit' }],
+    };
+  }
   return {
     version: 8,
     glyphs: GLYPHS,

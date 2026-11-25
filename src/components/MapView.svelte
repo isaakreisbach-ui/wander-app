@@ -1,9 +1,11 @@
 <script lang="ts">
   import { Map as MlMap, NavigationControl, GeolocateControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
   import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+  import SearchBox from './SearchBox.svelte';
+  import { onMount } from 'svelte';
+  import 'maplibre-gl/dist/maplibre-gl.css';
 
   setWorkerUrl(workerUrl);
-  import 'maplibre-gl/dist/maplibre-gl.css';
   import {
     BASES, styleFor, addTrailsOverlay, setTrailsVisible, mapSettings, saveMapSettings,
     mapState, runStyleHooks, type BaseId,
@@ -20,7 +22,9 @@
     messageTimer = setTimeout(() => (message = null), 6000);
   }
 
-  $effect(() => {
+  // onMount (nicht $effect): Die Karte wird genau einmal erzeugt, auch wenn sich
+  // gespeicherte Einstellungen (Position, Zoom) ändern.
+  onMount(() => {
     const map = new MlMap({
       container,
       style: styleFor(mapSettings.base),
@@ -101,6 +105,8 @@
 <div class="wrap">
   <div class="map" bind:this={container}></div>
 
+  <div class="search-slot"><SearchBox /></div>
+
   <div class="layer-ctrl">
     <button class="layer-btn" aria-label="Kartenebenen" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
@@ -134,7 +140,8 @@
   .wrap { position: relative; width: 100%; height: 100%; }
   .map { position: absolute; inset: 0; }
 
-  .layer-ctrl { position: absolute; top: 10px; left: 10px; z-index: 2; }
+  .layer-ctrl { position: absolute; top: 10px; left: 10px; z-index: 3; }
+  .search-slot { position: absolute; top: 10px; left: 66px; right: 68px; z-index: 2; max-width: 440px; }
   .layer-btn {
     width: 48px; height: 48px; border-radius: 12px; border: 0;
     background: #fff; color: var(--text);
@@ -163,8 +170,8 @@
   .opt.sel .check { border-color: var(--green); background: var(--green); }
 
   .toast {
-    position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 3;
-    width: min(420px, calc(100% - 140px));
+    position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 3;
+    width: min(420px, calc(100% - 24px));
     background: #222; color: #fff; padding: 10px 14px; border-radius: 12px; font-size: .9rem;
   }
 
@@ -175,6 +182,7 @@
   @media (pointer: fine) {
     .wrap :global(.maplibregl-ctrl-group button) { width: 36px; height: 36px; }
     .layer-btn { width: 40px; height: 40px; }
+    .search-slot { left: 58px; right: 56px; }
     .opt { min-height: 44px; }
   }
 </style>
