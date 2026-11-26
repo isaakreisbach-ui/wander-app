@@ -6,7 +6,19 @@ import { overpass, type OsmEl } from './overpass';
 import { routeSegment } from './routing';
 import { distance, cumulative, climb, walkingTimeHours, difficulty, maxGrade, type Pt, type Difficulty } from './geo';
 
-export type Peak = { name: string; lng: number; lat: number; ele?: number };
+/** Ziel: ein Gipfel oder ein beliebiger Punkt auf der Karte („Wie komme ich dahin?“) */
+export type Peak = { name: string; lng: number; lat: number; ele?: number; kind?: 'peak' | 'point' };
+
+/** Für einen angetippten Punkt einen Namen suchen (Photon-Rückwärtssuche) und Vorschläge laden */
+export async function openTarget(lng: number, lat: number) {
+  openPeak({ name: 'Gewählter Punkt', lng, lat, kind: 'point' });
+  try {
+    const r = await fetch(`https://photon.komoot.io/reverse?lon=${lng.toFixed(5)}&lat=${lat.toFixed(5)}&lang=de&limit=1`);
+    const p = (await r.json()).features?.[0]?.properties;
+    const name = p?.name ?? p?.street ?? p?.city ?? p?.village;
+    if (name && peakState.peak && peakState.peak.lng === lng) peakState.peak = { ...peakState.peak, name };
+  } catch { /* ohne Namen weiter */ }
+}
 
 export type StartKind = 'parking' | 'bus' | 'rail' | 'place';
 export type StartPoint = { id: string; kind: StartKind; name: string; lng: number; lat: number; dist: number; dir: string };

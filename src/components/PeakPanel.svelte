@@ -7,12 +7,33 @@
 
   const peak = $derived(peakState.peak!);
 
-  function adopt(s: Suggestion) {
+  const isPoint = $derived(peak.kind === 'point');
+  let locating = $state(false);
+
+  /** Route vom aktuellen GPS-Standort zum Ziel planen */
+  function fromMyLocation() {
+    if (!('geolocation' in navigator)) return alert('Dieses Gerät hat kein GPS.');
+    if (!confirmDiscard()) return;
+    locating = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        locating = false;
+        const a: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        planner.newPlanFrom(`Mein Standort → ${peak.name}`, [a, [peak.lng, peak.lat]]);
+        closePeak();
+        ui.view = 'planen';
+      },
+      () => { locating = false; alert('Standort konnte nicht ermittelt werden. Bitte Ortung erlauben.'); },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 },
+    );
+  }
+
+  function adopt(s: Suggestion, roundTrip = true) {
     if (!confirmDiscard()) return;
     const a: [number, number] = [s.start.lng, s.start.lat];
     const b: [number, number] = [peak.lng, peak.lat];
     const back = [...s.route].reverse() as Pt[];
-    planner.newPlanFrom(`${s.start.name} → ${peak.name}`, [a, b, a], [
+    planner.newPlanFrom(`${s.start.name} → ${peak.name}`, roundTrip ? [a, b, a] : [a, b], [
       { a, b, pts: s.route },
       { a: b, b: a, pts: back },
     ]);
@@ -34,8 +55,8 @@
 <div class="peak">
   <div class="top">
     <div>
-      <div class="kicker">Gipfel</div>
-      <h2>⛰️ {peak.name}</h2>
+      <div class="kicker">{isPoint ? 'Wie komme ich dahin?' : 'Gipfel'}</div>
+      <h2>{isPoint ? '📍' : '⛰️'} {peak.name}</h2>
       {#if peak.ele}<div class="ele">{peak.ele} m</div>{/if}
     </div>
     <button class="x" onclick={closePeak} aria-label="Schließen">✕</button>
@@ -48,7 +69,7 @@
   {/if}
 
   {#if peakState.suggestions.length}
-    <h4>Aufstiege – Hin & zurück</h4>
+    <h4>{isPoint ? 'Wanderungen dorthin' : 'Aufstiege – Hin & zurück'}</h4>
     <ul class="list">
       {#each peakState.suggestions as s, i (s.start.id)}
         <li class:sel={peakState.selected === i}>
@@ -63,7 +84,8 @@
           </button>
           {#if peakState.selected === i}
             <div class="detail">
-              <button class="btn" onclick={() => adopt(s)}>Diese Route übernehmen</button>
+              <button class="btn" onclick={() => adopt(s)}>Übernehmen – hin & zurück</button>
+              <button class="btn secondary" onclick={() => adopt(s, false)}>Nur hin</button>
               <div class="travel">
                 <a class="pill" href={directionsUrl(s.start.lng, s.start.lat, 'car')} target="_blank" rel="noopener">🚗 Anfahrt Auto</a>
                 {#if s.transit}
@@ -84,7 +106,8 @@
     <p class="note">Automatisch berechnet aus Parkplätzen, Haltestellen und Orten in OpenStreetMap (je Himmelsrichtung der beste). Bitte vor Ort prüfen, ob Parken erlaubt ist und der Weg markiert ist.</p>
   {/if}
 
-  <button class="link" onclick={addAsWaypoint}>Gipfel stattdessen als Punkt in die aktuelle Planung setzen</button>
+  <button class="btn secondary mine" onclick={fromMyLocation} disabled={locating}>{locating ? 'Suche Standort …' : '🧭 Route von meinem Standort hierher'}</button>
+  <button class="link" onclick={addAsWaypoint}>{isPoint ? 'Punkt' : 'Gipfel'} stattdessen in die aktuelle Planung setzen</button>
 </div>
 
 <style>
@@ -117,5 +140,7 @@
   .travel { display: flex; gap: 8px; margin-top: 8px; }
   .pill { flex: 1; text-align: center; padding: 10px; border-radius: 12px; background: var(--surface2); color: #0a84ff; font-weight: 600; text-decoration: none; font-size: .9rem; }
   .note { font-size: .75rem; color: #8e8e93; margin: 8px 2px; }
+  .mine { width: 100%; margin-top: 12px; border-radius: 12px; }
+  .detail .btn.secondary { background: var(--surface2); color: var(--text); border-color: transparent; }
   .link { border: 0; background: none; color: #0a84ff; font-size: .88rem; padding: 8px 2px; }
 </style>

@@ -6,8 +6,8 @@
   import { mapState, mapSettings, onStyleReady } from '../lib/map.svelte';
   import { planner } from '../lib/planner.svelte';
   import { POI_LAYERS } from '../lib/poiPopup';
-  import { PEAK_LAYERS } from '../lib/peaks.svelte';
-  import { openFromHere } from '../lib/fromhere.svelte';
+  import { PEAK_LAYERS, openTarget, closePeak } from '../lib/peaks.svelte';
+  import { openFromHere, closeFromHere } from '../lib/fromhere.svelte';
   import { ui } from '../lib/ui.svelte';
 
   let suppressClickUntil = 0;
@@ -299,7 +299,8 @@
 {#if menu}
   {@const m = menu}
   <div class="ctx" style:left="{Math.min(m.x, (mapState.map?.getContainer().clientWidth ?? 9999) - 260)}px" style:top="{m.y}px" role="menu">
-    <button role="menuitem" class="primary" onclick={() => act(() => { ui.view = 'planen'; openFromHere(m.lng, m.lat); })}>🔍 Was geht von hier aus?</button>
+    <button role="menuitem" class="primary" onclick={() => act(() => { ui.view = 'planen'; closePeak(); openFromHere(m.lng, m.lat); })}>🔍 Was geht von hier aus?</button>
+    <button role="menuitem" class="primary" onclick={() => act(() => { ui.view = 'planen'; closeFromHere(); openTarget(m.lng, m.lat); })}>🧭 Wie komme ich dahin?</button>
     <button role="menuitem" onclick={() => act(() => { ui.view = 'planen'; planner.active = true; planner.add(m.lng, m.lat); })}>
       📍 {planner.waypoints.length ? 'Als nächsten Punkt anhängen' : 'Tour hier starten'}
     </button>
