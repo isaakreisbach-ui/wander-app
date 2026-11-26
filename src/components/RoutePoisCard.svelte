@@ -148,28 +148,28 @@
 </Disclosure>
 
 <style>
-  .list { list-style: none; margin: 0; padding: 0; background: #f2f2f7; border-radius: 12px; overflow: hidden; }
-  li + li { border-top: 0.5px solid #d1d1d6; }
+  .list { list-style: none; margin: 0; padding: 0; background: var(--surface2); border-radius: 12px; overflow: hidden; }
+  li + li { border-top: 0.5px solid var(--line); }
   .row {
     width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
     padding: 10px 12px; border: 0; background: none; min-height: 52px;
     -webkit-tap-highlight-color: transparent;
   }
-  .row:active { background: #e5e5ea; }
-  .km { flex: none; width: 52px; font-size: .78rem; font-weight: 600; color: #007aff; font-variant-numeric: tabular-nums; }
+  .row:active { background: var(--surface3); }
+  .km { flex: none; width: 52px; font-size: .78rem; font-weight: 600; color: #0a84ff; font-variant-numeric: tabular-nums; }
   .emoji { flex: none; font-size: 1.1rem; }
   .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .name { font-size: .95rem; font-weight: 500; color: #1c1c1e; }
+  .name { font-size: .95rem; font-weight: 500; color: var(--text); }
   .sub { font-size: .78rem; color: #8e8e93; }
   .oh { font-size: .78rem; color: #8e8e93; }
-  .oh.ok { color: #248a3d; font-weight: 600; }
-  .oh.bad { color: #d70015; font-weight: 600; }
+  .oh.ok { color: #30d158; font-weight: 600; }
+  .oh.bad { color: #ff453a; font-weight: 600; }
   .tag { flex: none; font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-  .tag.ok { background: #e3f6e8; color: #248a3d; }
-  .tag.bad { background: #ffebea; color: #d70015; }
-  .tag.warn { background: #fff4e5; color: #c96a00; }
+  .tag.ok { background: rgba(48, 209, 88, .16); color: #30d158; }
+  .tag.bad { background: rgba(255, 69, 58, .16); color: #ff453a; }
+  .tag.warn { background: rgba(255, 159, 10, .16); color: #ff9f0a; }
   .chev { flex: none; color: #c7c7cc; font-size: 1.4rem; }
   .links { display: flex; gap: 14px; padding: 0 12px 10px 74px; font-size: .85rem; }
-  .links a { color: #007aff; font-weight: 500; text-decoration: none; }
+  .links a { color: #0a84ff; font-weight: 500; text-decoration: none; }
   .note { font-size: .75rem; color: #8e8e93; margin: 8px 2px 0; }
 </style>

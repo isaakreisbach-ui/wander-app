@@ -177,13 +177,13 @@
   .search-slot { position: absolute; top: 10px; left: 66px; right: 68px; z-index: 2; max-width: 440px; }
   .layer-btn {
     width: 48px; height: 48px; border-radius: 12px; border: 0;
-    background: #fff; color: var(--text);
+    background: var(--surface); color: var(--text);
     box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
     display: grid; place-items: center;
   }
   .menu {
     margin-top: 8px; width: min(300px, calc(100vw - 20px));
-    background: #fff; border-radius: 14px; padding: 8px;
+    background: var(--surface); border-radius: 14px; padding: 8px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, .25);
   }
   .menu-title { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; padding: 8px 8px 4px; }
@@ -204,7 +204,7 @@
 
   .offline-hint {
     position: absolute; z-index: 3; left: 10px; right: 10px; top: 66px; margin: 0 auto; max-width: 420px;
-    background: #fff1d6; border: 1px solid #f0b44c; border-radius: 12px; padding: 8px 10px;
+    background: rgba(255, 159, 10, .16); border: 1px solid #f0b44c; border-radius: 12px; padding: 8px 10px;
     display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .9rem;
   }
   .offline-hint button { border: 0; background: var(--green); color: #fff; border-radius: 8px; padding: 8px 12px; font-weight: 700; }

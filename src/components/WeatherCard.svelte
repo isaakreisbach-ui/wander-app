@@ -214,24 +214,24 @@
 <style>
   .head { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 6px; }
   .small { font-size: .8rem; }
-  .refresh { width: 36px; height: 36px; border: 0; background: #f2f2f7; font-size: 1.15rem; border-radius: 50%; color: #007aff; }
-  .refresh:active { background: #e5e5ea; }
+  .refresh { width: 36px; height: 36px; border: 0; background: var(--surface2); font-size: 1.15rem; border-radius: 50%; color: #0a84ff; }
+  .refresh:active { background: var(--surface3); }
   .spin { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .err { color: var(--warn); font-size: .9rem; }
 
-  .alert { border-radius: 12px; margin-bottom: 8px; border-left: 4px solid; background: #fff8d6; border-color: #e5c100; overflow: hidden; }
-  .alert.moderate { background: #ffedd5; border-color: #f08c00; }
-  .alert.severe { background: #fde2e1; border-color: #d00000; }
-  .alert.extreme { background: #f3e1f7; border-color: #8a0099; }
+  .alert { border-radius: 12px; margin-bottom: 8px; border-left: 4px solid; background: rgba(255, 214, 10, .14); border-color: #e5c100; overflow: hidden; }
+  .alert.moderate { background: rgba(255, 159, 10, .16); border-color: #f08c00; }
+  .alert.severe { background: rgba(255, 69, 58, .16); border-color: #d00000; }
+  .alert.extreme { background: rgba(191, 90, 242, .16); border-color: #8a0099; }
   .alert-head { width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
-  .sev { font-size: .75rem; font-weight: 700; text-transform: uppercase; color: #6b3d00; }
+  .sev { font-size: .75rem; font-weight: 700; text-transform: uppercase; color: #ffb340; }
   .when { font-size: .8rem; color: var(--muted); }
   .alert p { margin: 0 10px 8px; font-size: .88rem; }
 
   .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-bottom: 10px; }
   .day {
-    position: relative; border: 0; border-radius: 12px; background: #f2f2f7; color: #1c1c1e;
+    position: relative; border: 0; border-radius: 12px; background: var(--surface2); color: var(--text);
     padding: 7px 2px; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0;
     transition: background .15s;
   }
@@ -241,17 +241,17 @@
   .dt { font-size: .65rem; color: #8e8e93; }
   .ic { font-size: 1.35rem; line-height: 1.2; }
   .tt { font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .rp { font-size: .65rem; color: #007aff; white-space: nowrap; }
+  .rp { font-size: .65rem; color: #0a84ff; white-space: nowrap; }
   .dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff; }
   .dot.warn { background: #ff9500; }
   .dot.danger { background: #ff3b30; }
 
-  .summary { font-size: .88rem; margin: 4px 0 8px; color: #3a3a3c; }
+  .summary { font-size: .88rem; margin: 4px 0 8px; color: var(--text2); }
   .hints { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
   .hints li { font-size: .86rem; padding: 8px 12px; border-radius: 12px; }
-  .hints .info { background: #eaf3ff; color: #0a3d75; }
-  .hints .warn { background: #fff4e5; color: #7a4100; }
-  .hints .danger { background: #ffebea; color: #8a1a13; font-weight: 600; }
+  .hints .info { background: rgba(10, 132, 255, .16); color: #64a8ff; }
+  .hints .warn { background: rgba(255, 159, 10, .16); color: #ffb340; }
+  .hints .danger { background: rgba(255, 69, 58, .16); color: #ff6961; font-weight: 600; }
 
   .hours-wrap { overflow-x: auto; margin: 0 -4px; }
   .hours { border-collapse: collapse; width: 100%; font-size: .82rem; font-variant-numeric: tabular-nums; }
@@ -260,7 +260,7 @@
   .hours .place th { text-align: left; font-size: .78rem; color: var(--green-dark); padding-top: 8px; border-bottom: 1px solid var(--line); }
   .rl { text-align: left !important; font-weight: 600; color: var(--muted); font-size: .72rem; white-space: nowrap; }
   .small { font-size: .74rem; }
-  .cold { color: #1c5fa8; font-weight: 700; }
-  .windy { color: #c25e00; font-weight: 700; }
+  .cold { color: #64a8ff; font-weight: 700; }
+  .windy { color: #ff9f0a; font-weight: 700; }
   .foot { font-size: .72rem; color: var(--muted); margin: 8px 0 0; }
 </style>

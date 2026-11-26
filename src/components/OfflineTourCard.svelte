@@ -83,10 +83,10 @@
   .seg { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .seg button { min-height: 40px; border: 0; background: var(--surface); font-size: .85rem; font-weight: 600; }
   .seg button + button { border-left: 1px solid var(--line); }
-  .seg { border: 0; background: #e9e9eb; padding: 2px; border-radius: 9px; gap: 2px; }
+  .seg { border: 0; background: var(--surface3); padding: 2px; border-radius: 9px; gap: 2px; }
   .seg button { border-radius: 7px; background: none; }
   .seg button + button { border-left: 0; }
-  .seg button.sel { background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+  .seg button.sel { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
   .small { font-size: .8rem; margin: 4px 0 8px; }
   .bad { color: var(--bad); }
 </style>

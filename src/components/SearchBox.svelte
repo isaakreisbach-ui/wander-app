@@ -154,7 +154,7 @@
   .field {
     display: flex; align-items: center; gap: 8px;
     height: 48px; padding: 0 6px 0 12px;
-    background: #fff; border-radius: 12px; color: var(--muted);
+    background: var(--surface); border-radius: 12px; color: var(--muted);
     box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
   }
   input {
@@ -174,7 +174,7 @@
 
   .results {
     list-style: none; margin: 6px 0 0; padding: 6px;
-    background: #fff; border-radius: 12px;
+    background: var(--surface); border-radius: 12px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, .25);
     max-height: 60vh; overflow-y: auto;
   }

@@ -79,14 +79,14 @@
 {/if}
 
 <style>
-  .list { list-style: none; margin: 0; padding: 0; background: #f2f2f7; border-radius: 12px; overflow: hidden; }
+  .list { list-style: none; margin: 0; padding: 0; background: var(--surface2); border-radius: 12px; overflow: hidden; }
   li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
-  li + li { border-top: 0.5px solid #d1d1d6; }
+  li + li { border-top: 0.5px solid var(--line); }
   .icon { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 1rem; }
   .txt { display: flex; flex-direction: column; }
   .name { font-weight: 600; font-size: .95rem; }
   .sub { font-size: .8rem; color: #8e8e93; }
-  .advice p { font-size: .85rem; margin: 10px 2px 0; color: #3a3a3c; }
+  .advice p { font-size: .85rem; margin: 10px 2px 0; color: var(--text2); }
   .note { font-size: .74rem; color: #8e8e93; margin: 8px 2px 0; }
   .checking { font-size: .78rem; color: #8e8e93; margin: -4px 4px 10px; }
 </style>

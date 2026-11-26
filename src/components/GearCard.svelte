@@ -78,28 +78,28 @@
     margin: 12px 4px 6px; font-size: .78rem; font-weight: 600; letter-spacing: .02em;
     text-transform: uppercase; color: #8e8e93;
   }
-  .group { list-style: none; margin: 0; padding: 0; background: #f2f2f7; border-radius: 12px; overflow: hidden; }
-  li + li .row { border-top: 0.5px solid #d1d1d6; }
+  .group { list-style: none; margin: 0; padding: 0; background: var(--surface2); border-radius: 12px; overflow: hidden; }
+  li + li .row { border-top: 0.5px solid var(--line); }
   .row {
     width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
     padding: 10px 12px; border: 0; background: none; min-height: 52px;
     -webkit-tap-highlight-color: transparent;
   }
-  .row:active { background: #e5e5ea; }
+  .row:active { background: var(--surface3); }
   .check {
     flex: none; width: 22px; height: 22px; border-radius: 50%;
-    border: 1.5px solid #c7c7cc; display: grid; place-items: center; transition: all .15s;
+    border: 1.5px solid #636366; display: grid; place-items: center; transition: all .15s;
   }
   .packed .check { background: #34c759; border-color: #34c759; }
   .emoji { flex: none; font-size: 1.2rem; width: 24px; text-align: center; }
   .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .name { font-size: .95rem; font-weight: 500; color: #1c1c1e; }
+  .name { font-size: .95rem; font-weight: 500; color: var(--text); }
   .why { font-size: .8rem; color: #8e8e93; }
   .packed .name { color: #8e8e93; text-decoration: line-through; }
   .lvl { flex: none; font-size: .68rem; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
-  .lvl.must { background: #fff2e0; color: #c96a00; }
-  .lvl.recommended { background: #e8f1ff; color: #0a66d1; }
-  .lvl.optional { background: #f2f2f7; color: #8e8e93; }
+  .lvl.must { background: rgba(255, 159, 10, .18); color: #ff9f0a; }
+  .lvl.recommended { background: rgba(10, 132, 255, .16); color: #64a8ff; }
+  .lvl.optional { background: var(--surface2); color: #8e8e93; }
   .foot { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; margin-top: 10px; font-size: .75rem; color: #8e8e93; }
-  .reset { flex: none; border: 0; background: none; color: #007aff; font-size: .85rem; font-weight: 500; padding: 0; }
+  .reset { flex: none; border: 0; background: none; color: #0a84ff; font-size: .85rem; font-weight: 500; padding: 0; }
 </style>

@@ -45,13 +45,13 @@
       scales: { x: { time: false } },
       axes: [
         {
-          stroke: '#4b564d', size: 28, font: '12px system-ui',
-          grid: { stroke: '#e6ebe6', width: 1 }, ticks: { show: false },
+          stroke: '#98989d', size: 28, font: '12px system-ui',
+          grid: { stroke: '#3a3a3c', width: 1 }, ticks: { show: false },
           values: (_u, v) => v.map((x) => `${x.toLocaleString('de-DE', { maximumFractionDigits: 1 })} km`),
         },
         {
-          stroke: '#4b564d', size: 46, font: '12px system-ui',
-          grid: { stroke: '#e6ebe6', width: 1 }, ticks: { show: false },
+          stroke: '#98989d', size: 46, font: '12px system-ui',
+          grid: { stroke: '#3a3a3c', width: 1 }, ticks: { show: false },
           values: (_u, v) => v.map((y) => `${Math.round(y)} m`),
         },
       ],

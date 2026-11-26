@@ -156,12 +156,12 @@
   :global(.maplibregl-popup-close-button) { font-size: 20px; width: 30px; height: 30px; color: #8e8e93; }
   :global(.pp-title) { font-weight: 650; font-size: 1rem; padding-right: 22px; }
   :global(.pp-sub) { color: #8e8e93; font-size: .82rem; margin-bottom: 4px; }
-  :global(.pp-ok) { color: #248a3d; font-weight: 600; font-size: .88rem; }
-  :global(.pp-bad) { color: #d70015; font-weight: 600; font-size: .88rem; }
-  :global(.pp-warn) { color: #c96a00; font-weight: 600; font-size: .85rem; }
+  :global(.pp-ok) { color: #30d158; font-weight: 600; font-size: .88rem; }
+  :global(.pp-bad) { color: #ff453a; font-weight: 600; font-size: .88rem; }
+  :global(.pp-warn) { color: #ff9f0a; font-weight: 600; font-size: .85rem; }
   :global(.pp-oh) { font-size: .85rem; margin: 4px 0; }
   :global(.pp-raw) { color: #8e8e93; font-size: .75rem; margin-top: 2px; }
   :global(.pp-links) { margin-top: 6px; font-size: .9rem; }
-  :global(.pp-links a) { color: #007aff; font-weight: 500; text-decoration: none; }
+  :global(.pp-links a) { color: #0a84ff; font-weight: 500; text-decoration: none; }
   :global(.pp-note) { color: #8e8e93; font-size: .72rem; margin-top: 6px; }
 </style>

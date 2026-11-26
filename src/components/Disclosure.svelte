@@ -41,7 +41,7 @@
 
 <style>
   .box {
-    background: #fff;
+    background: var(--surface);
     border-radius: 16px;
     margin-bottom: 12px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05);
@@ -53,13 +53,13 @@
     padding: 12px 14px; border: 0; background: none; text-align: left;
     -webkit-tap-highlight-color: transparent;
   }
-  .head:active { background: #f2f2f7; }
+  .head:active { background: var(--surface2); }
   .icon {
     flex: none; width: 32px; height: 32px; border-radius: 8px;
     display: grid; place-items: center; font-size: 1.05rem; color: #fff;
   }
   .text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .title { font-weight: 600; font-size: 1.02rem; letter-spacing: -0.01em; color: #1c1c1e; }
+  .title { font-weight: 600; font-size: 1.02rem; letter-spacing: -0.01em; color: var(--text); }
   .summary { font-size: .84rem; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .badge {
     flex: none; font-size: .75rem; font-weight: 700; color: #fff; background: #ff9500;

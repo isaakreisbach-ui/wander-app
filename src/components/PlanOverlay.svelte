@@ -337,7 +337,7 @@
   :global(.wp-marker) {
     width: 30px; height: 30px; border-radius: 50%;
     display: grid; place-items: center;
-    background: #fff; color: #111; border: 3px solid #e5246b;
+    background: var(--surface); color: #111; border: 3px solid #e5246b;
     font: 800 13px/1 system-ui, sans-serif;
     box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
     cursor: grab; touch-action: none;
@@ -351,7 +351,7 @@
 
   .ctx, .wp-pop {
     position: absolute; z-index: 6;
-    background: #fff; border-radius: 12px; padding: 6px;
+    background: var(--surface); border-radius: 12px; padding: 6px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, .3);
   }
   .ctx { min-width: 250px; transform: translate(4px, 4px); }
@@ -365,7 +365,7 @@
   .ctx hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
   kbd { font: 600 .75rem system-ui; color: var(--muted); }
   .danger { color: var(--bad); }
-  .ctx .primary { color: #007aff; font-weight: 650; }
+  .ctx .primary { color: #0a84ff; font-weight: 650; }
   :global(.maplibregl-canvas-container) { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 
   .wp-pop { transform: translate(-50%, calc(-100% - 26px)); min-width: 190px; text-align: center; }

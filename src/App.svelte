@@ -167,7 +167,7 @@
     grid-area: top; z-index: 5;
     display: flex; align-items: center; justify-content: space-between;
     padding: calc(10px + var(--safe-top)) 16px 10px;
-    background: var(--green); color: #fff;
+    background: #141416; color: #fff; border-bottom: 1px solid #2c2c2e;
   }
   .brand { font-weight: 750; font-size: 1.15rem; }
   .top-right { display: flex; gap: 8px; align-items: center; }

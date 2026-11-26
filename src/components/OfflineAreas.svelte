@@ -105,7 +105,7 @@
   .name { flex: 1; text-align: left; border: 0; background: none; padding: 8px 0; display: flex; flex-direction: column; }
   .name span { font-size: .8rem; color: var(--muted); }
   .del { width: 44px; height: 44px; border: 0; background: none; border-radius: 8px; }
-  .del:hover { background: #fde2e1; }
+  .del:hover { background: rgba(255, 69, 58, .16); }
   .wide { width: 100%; }
   .small { font-size: .8rem; margin: 6px 0; }
   details { font-size: .85rem; margin-top: 6px; }

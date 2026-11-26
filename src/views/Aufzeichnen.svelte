@@ -189,14 +189,14 @@
   .big { width: 100%; min-height: 64px; font-size: 1.15rem; }
   .start { background: #c62828; border-color: #c62828; margin-bottom: 12px; }
   .guide-pick p { margin: 0 0 6px; }
-  select { width: 100%; min-height: 48px; font: inherit; font-size: 16px; border-radius: 10px; border: 1px solid var(--line); padding: 0 10px; background: #fff; }
+  select { width: 100%; min-height: 48px; font: inherit; font-size: 16px; border-radius: 10px; border: 1px solid var(--line); padding: 0 10px; background: var(--surface); }
   .tips ul { padding-left: 1.1em; margin: 0; }
   .tips li { margin-bottom: 6px; font-size: .92rem; }
   .tips .warn { color: var(--warn); font-weight: 650; }
 
   .banner { position: relative; border-radius: 12px; padding: 10px 36px 10px 12px; margin-bottom: 10px; font-size: .9rem; }
-  .banner.info { background: #e7f0fb; }
-  .banner.warn { background: #fff1d6; }
+  .banner.info { background: rgba(10, 132, 255, .14); }
+  .banner.warn { background: rgba(255, 159, 10, .16); }
   .banner .x { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border: 0; background: none; }
 
   .clock {
@@ -213,7 +213,7 @@
   .tile .l { font-size: .78rem; color: var(--muted); font-weight: 600; }
 
   .guide { background: var(--green-soft); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: .95rem; }
-  .guide.off { background: #fde2e1; }
+  .guide.off { background: rgba(255, 69, 58, .16); }
 
   .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .stop { background: #1b1f1c; border-color: #1b1f1c; }

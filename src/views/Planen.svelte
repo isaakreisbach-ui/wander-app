@@ -205,7 +205,7 @@
 <style>
   .intro ol { padding-left: 1.3em; margin: 0 0 .75em; }
   .intro li + li { margin-top: 6px; }
-  kbd { font: 600 .8rem system-ui; background: #eef1ee; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  kbd { font: 600 .8rem system-ui; background: var(--surface2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
 
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
   .stat {
@@ -221,31 +221,31 @@
   .diff.mittel { background: #c77700; }
   .diff.schwer { background: #b3261e; }
   .busy { color: var(--green); font-weight: 600; font-size: .9rem; }
-  .error { color: var(--warn); background: #fff4e0; border-radius: 10px; padding: 8px 10px; font-size: .9rem; }
+  .error { color: var(--warn); background: rgba(255, 159, 10, .16); border-radius: 10px; padding: 8px 10px; font-size: .9rem; }
 
   .profile-card { padding: 8px 6px 4px; }
   .fly { width: 100%; margin: 0 0 12px; }
-  .steep { background: #fff; border-radius: 16px; padding: 4px 14px; margin: -4px 0 10px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05); }
+  .steep { background: var(--surface); border-radius: 16px; padding: 4px 14px; margin: -4px 0 10px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05); }
   .ios-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; cursor: pointer; }
   .lbl { display: flex; flex-direction: column; }
   .lbl b { font-weight: 600; font-size: .98rem; }
   .lbl small { color: #8e8e93; font-size: .8rem; }
   .ios-switch {
     appearance: none; -webkit-appearance: none; flex: none; position: relative;
-    width: 51px; height: 31px; border-radius: 999px; background: #e9e9eb; transition: background .2s; cursor: pointer; margin: 0;
+    width: 51px; height: 31px; border-radius: 999px; background: var(--surface3); transition: background .2s; cursor: pointer; margin: 0;
   }
   .ios-switch::after {
     content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
-    background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .2); transition: transform .2s;
+    background: var(--surface); box-shadow: 0 2px 4px rgba(0, 0, 0, .2); transition: transform .2s;
   }
   .ios-switch:checked { background: #34c759; }
   .ios-switch:checked::after { transform: translateX(20px); }
   .legend3 { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; padding: 2px 0 6px; }
   .legend3 span { display: inline-flex; align-items: center; gap: 6px; }
   .legend3 i { width: 18px; height: 5px; border-radius: 3px; display: inline-block; }
-  .legend3 b { font-weight: 600; color: #3a3a3c; }
+  .legend3 b { font-weight: 600; color: var(--text2); }
   .tiny { font-size: .72rem; color: #8e8e93; margin: 0 0 8px; }
-  .legend { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; background: #fff4e0; border-radius: 10px; padding: 8px 10px; }
+  .legend { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; background: rgba(255, 159, 10, .16); border-radius: 10px; padding: 8px 10px; }
   .dash {
     flex: none; width: 34px; height: 5px; margin-top: 7px;
     background: repeating-linear-gradient(90deg, #e5246b 0 7px, transparent 7px 12px);
