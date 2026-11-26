@@ -43,7 +43,7 @@
   const LEVEL: Record<GearItem['level'], string> = { must: 'Wichtig', recommended: 'Empfohlen', optional: 'Optional' };
 </script>
 
-<Disclosure id="gear" icon="🎒" tint="#ff9500" title="Ausrüstung" {summary} badge={mustOpen ? `${mustOpen} wichtig` : ''}>
+<Disclosure id="gear" icon="pack" tint="#ff9500" title="Ausrüstung" {summary} badge={mustOpen ? `${mustOpen} wichtig` : ''}>
   {#each GROUPS as g}
     {@const list = byGroup(g)}
     {#if list.length}

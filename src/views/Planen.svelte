@@ -25,6 +25,9 @@
   import { mapSettings, saveMapSettings, mapState } from '../lib/map.svelte';
   import { favs } from '../lib/favorites.svelte';
   import RoundTripCard from '../components/RoundTripCard.svelte';
+  import SurfaceBar from '../components/SurfaceBar.svelte';
+  import AvalancheCard from '../components/AvalancheCard.svelte';
+  import StagesCard from '../components/StagesCard.svelte';
   let showRound = $state(false);
 
   // Anteil der Strecke je Steilheit (in km)
@@ -153,6 +156,7 @@
     <p class="muted">{planner.routing ? 'Route wird berechnet …' : 'Setze einen zweiten Punkt.'}</p>
   {/if}
 
+  {#if !planner.routing}<SurfaceBar />{/if}
   {#if planner.error}<p class="error" role="alert">{planner.error}</p>{/if}
   {#if planner.straight.some(Boolean)}
     <p class="legend">
@@ -198,10 +202,12 @@
 
   {#if planner.route.length > 1 && !planner.routing}
     <AlpineCard />
+    <AvalancheCard />
     <WeatherCard route={planner.route} />
     {#if planner.stats}<StartTimeCard stats={planner.stats} />{/if}
     {#if planner.stats}<GearCard stats={planner.stats} tourKey={planner.tourId ?? 'entwurf'} />{/if}
     <RoutePoisCard />
+    <StagesCard />
     <OfflineTourCard route={planner.route} tourId={planner.tourId} name={planner.name || defaultTourName()} />
   {/if}
 

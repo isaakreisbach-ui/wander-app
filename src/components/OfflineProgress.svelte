@@ -12,6 +12,7 @@
         <button onclick={cancelDownload}>Abbrechen</button>
       </div>
       <div class="bar"><div style:width="{pct}%"></div></div>
+      {#if job!.message}<div class="sub">{job!.message}</div>{/if}
     {:else}
       <div class="line">
         <span>
@@ -36,6 +37,7 @@
   .dl.err { background: #6d1b16; }
   .line { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   button { border: 1px solid rgba(255, 255, 255, .5); background: none; color: #fff; border-radius: 8px; padding: 6px 10px; font-weight: 650; }
+  .sub { margin-top: 6px; font-size: .8rem; opacity: .8; }
   .bar { margin-top: 8px; height: 6px; background: rgba(255, 255, 255, .2); border-radius: 3px; overflow: hidden; }
   .bar div { height: 100%; background: #7fd18b; transition: width .2s; }
   @media (min-width: 900px) { .dl { bottom: 20px; } }

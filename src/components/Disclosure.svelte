@@ -2,6 +2,7 @@
   // Aufklappbare Box im Stil von iOS: Symbol, Titel, Kurzinfo, Pfeil. Merkt sich, ob sie offen ist.
   import type { Snippet } from 'svelte';
   import { slide } from 'svelte/transition';
+  import LineIcon, { LINE_ICONS } from './LineIcon.svelte';
 
   let { id, icon, tint = '#34c759', title, summary = '', badge = '', children, defaultOpen = false }: {
     id: string; icon: string; tint?: string; title: string; summary?: string; badge?: string;
@@ -22,7 +23,7 @@
 
 <section class="box">
   <button class="head" onclick={toggle} aria-expanded={open}>
-    <span class="icon" style:background={tint} aria-hidden="true">{icon}</span>
+    <span class="icon" style:background={tint} aria-hidden="true">{#if LINE_ICONS[icon]}<LineIcon name={icon} />{:else}{icon}{/if}</span>
     <span class="text">
       <span class="title">{title}</span>
       {#if summary}<span class="summary">{summary}</span>{/if}

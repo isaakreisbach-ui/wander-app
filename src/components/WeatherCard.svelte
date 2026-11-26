@@ -116,7 +116,7 @@
   const alertBadge = $derived(weather?.alerts.length ? `${weather.alerts.length} Warnung${weather.alerts.length > 1 ? 'en' : ''}` : '');
 </script>
 
-<Disclosure id="weather" icon="⛅" tint="#007aff" title="Wetter" {summary} badge={alertBadge}>
+<Disclosure id="weather" icon="weather" tint="#007aff" title="Wetter" {summary} badge={alertBadge}>
   <div class="head">
     <span class="muted small">Start{weather && weather.places.length > 1 ? ' und höchster Punkt' : ''}</span>
     <button class="refresh" onclick={() => refresh(true)} disabled={loading} title="Aktualisieren" aria-label="Wetter aktualisieren">

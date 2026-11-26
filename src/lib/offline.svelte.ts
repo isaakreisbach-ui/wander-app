@@ -8,6 +8,8 @@
 
 import { db, newTourId, type OfflineArea } from './db';
 import { distance, type Pt } from './geo';
+import { cellsForBbox, loadCells } from './pois.svelte';
+import { prefetchCells } from './cellcache';
 
 export const OFFLINE_CACHE = 'ofm-offline';
 const STATIC_CACHE = 'ofm-static';
@@ -167,6 +169,19 @@ export async function downloadArea(opts: {
       offline.job!.status = 'cancelled';
       return null;
     }
+    // Zusätzlich für offline: Wasserstellen/Hütten/Bänke, markierte Routen und Pfade des Gebiets
+    let extrasFailed = false;
+    const [bw, bs, be, bn] = opts.bbox;
+    const cells = cellsForBbox(bw - 0.01, bs - 0.01, be + 0.01, bn + 0.01);
+    if (cells.length <= 400) {
+      offline.job!.message = 'Wege, Routen und Orte werden gespeichert …';
+      try { await loadCells(cells, 400); } catch { extrasFailed = true; }
+      for (const kind of ['routes', 'paths'] as const) {
+        const n = await prefetchCells(kind, [bw - 0.01, bs - 0.01, be + 0.01, bn + 0.01]).catch(() => 0);
+        if (n < cells.length) extrasFailed = true;
+      }
+      offline.job!.message = undefined;
+    }
     const area: OfflineArea = {
       id: newTourId(),
       name: opts.name,
@@ -186,7 +201,7 @@ export async function downloadArea(opts: {
     offline.job!.status = 'done';
     offline.job!.message = offline.job!.failed
       ? `${offline.job!.failed} Kacheln fehlen – bitte später erneut herunterladen.`
-      : undefined;
+      : extrasFailed ? 'Karte gespeichert. Einige Wege/Orte konnten nicht geladen werden (Server ausgelastet) – später erneut herunterladen.' : undefined;
     return area;
   } catch (e) {
     offline.job!.status = 'error';

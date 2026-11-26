@@ -4,11 +4,10 @@
   import type { GeoJSONSource, Map as MlMap } from 'maplibre-gl';
   import type * as GeoJSON from 'geojson';
   import { mapState, mapSettings, onStyleReady } from '../lib/map.svelte';
-  import { overpass } from '../lib/overpass';
+  import { cellElements } from '../lib/cellcache';
   import { cellsForBbox } from '../lib/pois.svelte';
 
   const SRC = 'marked-routes';
-  const CELL = 0.05;
   const loaded = new Set<string>();
   const loading = new Set<string>();
   const features = new Map<string, GeoJSON.Feature>(); // je Weg-Stück (Relation+Way) nur einmal
@@ -22,12 +21,9 @@
   async function loadCell(key: string) {
     if (loaded.has(key) || loading.has(key)) return;
     loading.add(key);
-    const [cx, cy] = key.split('_').map(Number);
-    const bb = `(${(cy * CELL).toFixed(4)},${(cx * CELL).toFixed(4)},${((cy + 1) * CELL).toFixed(4)},${((cx + 1) * CELL).toFixed(4)})`;
     try {
-      const els = (await overpass(`[out:json][timeout:25];relation["route"~"^(hiking|foot)$"]${bb};out geom tags;`)) as {
-        id: number; tags?: Record<string, string>; members?: { type: string; ref: number; geometry?: { lat: number; lon: number }[] }[];
-      }[];
+      const els = await cellElements('routes', key);
+      if (!els) return;
       for (const r of els) {
         const ref = r.tags?.ref || r.tags?.['osmc:name'] || (r.tags?.name ?? '').slice(0, 14);
         for (const m of r.members ?? []) {
@@ -87,7 +83,7 @@
     const load = () => {
       clearTimeout(t);
       t = setTimeout(() => {
-        if (!mapSettings.trails || map.getZoom() < 12 || !navigator.onLine) return;
+        if (!mapSettings.trails || map.getZoom() < 12) return;
         const b = map.getBounds();
         const cells = cellsForBbox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth());
         if (cells.length <= 12) cells.forEach((c) => loadCell(c));

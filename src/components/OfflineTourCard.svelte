@@ -47,7 +47,7 @@
 </script>
 
 <Disclosure
-  id="offline" icon="📥" tint="#5856d6" title="Offline-Karte"
+  id="offline" icon="download" tint="#5856d6" title="Offline-Karte"
   summary={area ? `✓ Gespeichert · ${formatMB(area.bytes)}` : 'Für diese Tour noch nicht gespeichert'}
 >
   {#if area}

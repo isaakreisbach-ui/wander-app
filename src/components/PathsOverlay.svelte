@@ -4,11 +4,10 @@
   import type { GeoJSONSource } from 'maplibre-gl';
   import type * as GeoJSON from 'geojson';
   import { mapState, mapSettings, onStyleReady } from '../lib/map.svelte';
-  import { overpass } from '../lib/overpass';
+  import { cellElements } from '../lib/cellcache';
   import { cellsForBbox } from '../lib/pois.svelte';
 
   const SRC = 'low-zoom-paths';
-  const CELL = 0.05;
   const loaded = new Set<string>();
   const loading = new Set<string>();
   const feats: GeoJSON.Feature[] = [];
@@ -22,11 +21,9 @@
   async function loadCell(key: string) {
     if (loaded.has(key) || loading.has(key)) return;
     loading.add(key);
-    const [cx, cy] = key.split('_').map(Number);
-    const bb = `(${(cy * CELL).toFixed(4)},${(cx * CELL).toFixed(4)},${((cy + 1) * CELL).toFixed(4)},${((cx + 1) * CELL).toFixed(4)})`;
     try {
-      const els = (await overpass(`[out:json][timeout:25];way["highway"~"^(path|footway|bridleway|steps|track)$"]${bb};out geom tags;`)) as
-        { tags?: Record<string, string>; geometry?: { lat: number; lon: number }[] }[];
+      const els = await cellElements('paths', key);
+      if (!els) return;
       for (const w of els) {
         if (!w.geometry?.length) continue;
         feats.push({
@@ -67,7 +64,7 @@
       clearTimeout(t);
       t = setTimeout(() => {
         const z = map.getZoom();
-        if (mapSettings.base === 'topo' || z < 12 || z >= 14 || !navigator.onLine) return;
+        if (mapSettings.base === 'topo' || z < 12 || z >= 14) return;
         const b = map.getBounds();
         const cells = cellsForBbox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth());
         if (cells.length <= 9) cells.forEach((c) => loadCell(c));

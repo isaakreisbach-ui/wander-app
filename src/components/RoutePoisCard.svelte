@@ -57,7 +57,7 @@
   );
 </script>
 
-<Disclosure id="water" icon="💧" tint="#0a84ff" title="Wasserstellen" summary={waterSummary}>
+<Disclosure id="water" icon="drop" tint="#0a84ff" title="Wasserstellen" summary={waterSummary}>
   {#if water.length}
     <ul class="list">
       {#each water as p (p.id)}
@@ -81,7 +81,7 @@
   {/if}
 </Disclosure>
 
-<Disclosure id="eat" icon="🏠" tint="#a2541c" title="Einkehr & Hütten" summary={eatSummary}>
+<Disclosure id="eat" icon="hut" tint="#a2541c" title="Einkehr & Hütten" summary={eatSummary}>
   {#if eat.length}
     <ul class="list">
       {#each eat as p (p.id)}
@@ -115,7 +115,7 @@
   {/if}
 </Disclosure>
 
-<Disclosure id="rest" icon="👀" tint="#af52de" title="Aussicht & Rast" summary={restSummary}>
+<Disclosure id="rest" icon="eye" tint="#af52de" title="Aussicht & Rast" summary={restSummary}>
   {#if views.length || benches.length}
     <ul class="list">
       {#each views as p (p.id)}

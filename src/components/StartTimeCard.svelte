@@ -25,7 +25,7 @@
 </script>
 
 {#if rec}
-  <Disclosure id="start" icon="🕗" tint="#5856d6" title="Beste Startzeit" {summary}>
+  <Disclosure id="start" icon="clock" tint="#5856d6" title="Beste Startzeit" {summary}>
     <div class="hero">
       <div class="big">{hm(rec.best)}<span> Uhr</span></div>
       <div class="meta">

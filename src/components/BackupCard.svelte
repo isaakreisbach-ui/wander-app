@@ -34,7 +34,7 @@
   }
 </script>
 
-<Disclosure id="backup" icon="💾" tint="#0a84ff" title="Datensicherung" {summary} badge={daysAgo === null || daysAgo > 30 ? 'Empfohlen' : ''}>
+<Disclosure id="backup" icon="save" tint="#0a84ff" title="Datensicherung" {summary} badge={daysAgo === null || daysAgo > 30 ? 'Empfohlen' : ''}>
   <p class="txt">Deine Touren liegen nur auf diesem Gerät. Sichere sie regelmäßig als Datei – z. B. in iCloud Drive („In Dateien sichern“) oder auf dem PC. Damit bringst du auch alle Touren auf einmal auf ein anderes Gerät.</p>
   <div class="row">
     <button class="btn" onclick={backup} disabled={busy}>Jetzt sichern</button>

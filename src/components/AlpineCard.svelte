@@ -55,7 +55,7 @@
 </script>
 
 {#if sections.length}
-  <Disclosure id="alpine" icon="⚠️" tint="#ff3b30" title="Alpine Abschnitte" {summary} badge="Achtung" defaultOpen>
+  <Disclosure id="alpine" icon="alert" tint="#ff3b30" title="Alpine Abschnitte" {summary} badge="Achtung" defaultOpen>
     <ul class="list">
       {#each sections as s, i (i)}
         <li>
