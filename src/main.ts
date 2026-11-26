@@ -22,5 +22,12 @@ registerSW({
 
 mount(App, { target: document.getElementById('app')! });
 
+// Startbildschirm sanft ausblenden, sobald die App steht
+const splash = document.getElementById('splash');
+if (splash) {
+  splash.style.transition = 'opacity .3s';
+  requestAnimationFrame(() => { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 350); });
+}
+
 // Beim Surfen gesammelte Kartenkacheln begrenzen (die bewusst heruntergeladenen bleiben)
 setTimeout(() => trimBrowseCache(), 10_000);

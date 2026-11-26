@@ -28,13 +28,15 @@ export const fromHere = $state<{
   peaks: PeakOption[];
   hikes: HikeOption[];
   selected: { type: 'peak' | 'hike'; id: string | number } | null;
+  /** Vorschlag, über dem gerade die Maus steht (PC) – wird auf der Karte hervorgehoben */
+  hover: { type: 'peak' | 'hike'; id: string | number } | null;
   /** Kategorie je Vorschlag ('p:<id>' / 'h:<id>') – kommt nach, sobald geprüft */
   cats: Record<string, { cat: RouteCategory; grade: string }>;
   catStatus: 'idle' | 'loading' | 'done' | 'error';
   /** Welche Kategorien angezeigt werden (an/aus) */
   show: Record<RouteCategory, boolean>;
 }>({
-  point: null, peakStatus: 'idle', hikeStatus: 'idle', peakMsg: '', hikeMsg: '', peaks: [], hikes: [], selected: null,
+  point: null, peakStatus: 'idle', hikeStatus: 'idle', peakMsg: '', hikeMsg: '', peaks: [], hikes: [], selected: null, hover: null,
   cats: {}, catStatus: 'idle',
   show: (() => {
     try { return { wander: true, alpine: true, via_ferrata: true, glacier: true, ...JSON.parse(localStorage.getItem('wander.fh.show') || '{}') }; }

@@ -42,7 +42,8 @@ export const peakState = $state<{
   message: string;
   suggestions: Suggestion[];
   selected: number | null;
-}>({ peak: null, status: 'idle', message: '', suggestions: [], selected: null });
+  hover: number | null;
+}>({ peak: null, status: 'idle', message: '', suggestions: [], selected: null, hover: null });
 
 const KIND_RANK: Record<StartKind, number> = { parking: 3, rail: 3, bus: 2, place: 1 };
 const DIRS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];

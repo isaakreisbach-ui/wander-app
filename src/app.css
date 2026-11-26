@@ -32,7 +32,10 @@
 
 * { box-sizing: border-box; }
 html, body, #app { margin: 0; height: 100%; }
-body { overscroll-behavior: none; }
+/* Kein „Gummiband“-Ziehen der ganzen Seite auf dem iPhone – die App bleibt fest stehen */
+html, body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }
+body { -webkit-tap-highlight-color: transparent; }
+.panel, .modal, .hud { overscroll-behavior: contain; }
 button { font: inherit; color: inherit; cursor: pointer; }
 h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 h2 { font-size: 1.25rem; }

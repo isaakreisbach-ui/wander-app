@@ -11,11 +11,11 @@
   function data(): GeoJSON.FeatureCollection {
     return {
       type: 'FeatureCollection',
-      features: peakState.peak ? peakState.suggestions.map((s, i) => ({
+      features: peakState.peak ? peakState.suggestions.map((s, i): GeoJSON.Feature<GeoJSON.LineString, { color: string; sel: boolean; dim: number }> => ({
         type: 'Feature',
-        properties: { color: SUGGEST_COLORS[i % SUGGEST_COLORS.length], sel: peakState.selected === i },
-        geometry: { type: 'LineString', coordinates: s.route.map((p) => [p[0], p[1]]) },
-      })) : [],
+        properties: { color: SUGGEST_COLORS[i % SUGGEST_COLORS.length], sel: (peakState.hover ?? peakState.selected) === i, dim: (peakState.hover ?? peakState.selected) !== null ? 0.18 : 0.75 },
+        geometry: { type: 'LineString' as const, coordinates: s.route.map((p) => [p[0], p[1]]) },
+      })).sort((a, b) => Number(a.properties.sel) - Number(b.properties.sel)) : [],
     };
   }
 
@@ -23,9 +23,9 @@
     if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: data() });
     if (!map.getLayer('peak-sugg-casing')) {
       map.addLayer({ id: 'peak-sugg-casing', type: 'line', source: SRC, layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#fff', 'line-width': ['case', ['get', 'sel'], 9, 6] } });
+        paint: { 'line-color': '#fff', 'line-width': ['case', ['get', 'sel'], 10, 6], 'line-opacity': ['case', ['get', 'sel'], 1, ['get', 'dim']] } });
       map.addLayer({ id: 'peak-sugg', type: 'line', source: SRC, layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'sel'], 6, 3.5], 'line-opacity': ['case', ['get', 'sel'], 1, 0.75] } });
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'sel'], 6, 3.5], 'line-opacity': ['case', ['get', 'sel'], 1, ['get', 'dim']] } });
     }
   });
 

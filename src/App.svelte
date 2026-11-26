@@ -1,5 +1,7 @@
 <script lang="ts">
   import MapView from './components/MapView.svelte';
+  import TabIcon from './components/TabIcon.svelte';
+  import TrackHud from './components/TrackHud.svelte';
   import Planen from './views/Planen.svelte';
   import Touren from './views/Touren.svelte';
   import Aufzeichnen from './views/Aufzeichnen.svelte';
@@ -83,6 +85,36 @@
     };
   });
 
+  // ---------- Ziehbares Blatt (Handy) wie bei Apple Karten: klein / halb / ganz ----------
+  type Snap = 'peek' | 'half' | 'full';
+  const SNAPS: Record<Snap, number> = { peek: 0.24, half: 0.5, full: 0.9 };
+  let sheetSnap = $state<Snap>('half');
+  let dragY = $state<number | null>(null);
+  let dragStart = 0, dragFrom = 0, dragMoved = false;
+  const shellH = () => (document.querySelector('.map') as HTMLElement | null)?.clientHeight ?? window.innerHeight;
+  const sheetHeight = $derived(
+    desktop ? undefined : dragY !== null ? `${Math.max(60, dragY)}px` : `${Math.round(SNAPS[sheetSnap] * 100)}%`,
+  );
+  function sheetDown(e: PointerEvent) {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragStart = e.clientY;
+    dragFrom = (e.currentTarget as HTMLElement).closest('.panel')!.getBoundingClientRect().height;
+    dragMoved = false;
+  }
+  function sheetMove(e: PointerEvent) {
+    if (!(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) return;
+    const dy = e.clientY - dragStart;
+    if (Math.abs(dy) > 6) dragMoved = true;
+    if (dragMoved) dragY = dragFrom - dy;
+  }
+  function sheetUp() {
+    if (!dragMoved) { dragY = null; ui.view = 'karte'; return; } // Antippen = schließen
+    const frac = (dragY ?? 0) / shellH();
+    dragY = null;
+    if (frac < 0.15) { ui.view = 'karte'; sheetSnap = 'half'; return; } // weit nach unten gewischt
+    sheetSnap = (Object.entries(SNAPS) as [Snap, number][]).reduce((a, b) => (Math.abs(b[1] - frac) < Math.abs(a[1] - frac) ? b : a))[0];
+  }
+
   // Dauerhaften Speicher gleich beim Start anfragen
   requestPersistentStorage();
 </script>
@@ -112,17 +144,19 @@
         aria-current={panelView === t.id ? 'page' : undefined}
         onclick={() => (ui.view = t.id)}
       >
-        <span class="icon" aria-hidden="true">{t.icon}</span>
+        <span class="icon" aria-hidden="true"><TabIcon name={t.id} size={desktop ? 18 : 26} /></span>
         <span class="label">{t.label}</span>
       </button>
     {/each}
   </nav>
 
   {#if panelView !== 'karte'}
-    <section class="panel" class:compact={panelView === 'planen'}>
-      <button class="sheet-close" onclick={() => (ui.view = 'karte')} aria-label="Zur Karte">
+    <section class="panel" class:compact={panelView === 'planen'} class:dragging={dragY !== null}
+      style:height={sheetHeight} style:max-height={sheetHeight ? 'none' : undefined}>
+      <button class="sheet-close" aria-label="Blatt ziehen oder antippen zum Schließen"
+        onpointerdown={sheetDown} onpointermove={sheetMove} onpointerup={sheetUp} onpointercancel={sheetUp}>
         <span class="grip" aria-hidden="true"></span>
-        <span>Karte zeigen ▾</span>
+        <span>{sheetSnap === 'full' ? 'Ziehen zum Verkleinern' : 'Hochziehen · nach unten wischen schließt'}</span>
       </button>
       {#if fromHere.point && panelView === 'planen'}<FromHerePanel />
       {:else if peakState.peak && panelView === 'planen'}<PeakPanel />
@@ -137,6 +171,7 @@
   {#if ui.scanner}<QrScanner />{/if}
   <ReceiveDialogs />
   <OfflineProgress />
+  <TrackHud />
 
   {#if ui.toast}<div class="app-toast" role="status">{ui.toast}</div>{/if}
   {#if dragging}<div class="dropzone">GPX-Datei hier loslassen zum Importieren</div>{/if}
@@ -196,6 +231,9 @@
   @media (max-width: 899px) {
     .panel.compact { max-height: 46%; }
   }
+  .panel { transition: height .25s cubic-bezier(.2, .8, .2, 1); }
+  .panel.dragging { transition: none; }
+  .sheet-close { touch-action: none; cursor: grab; }
   .sheet-close {
     position: sticky; top: 0; z-index: 1;
     width: calc(100% + 28px); margin: 0 -14px 10px;
@@ -217,8 +255,9 @@
     border: 0; background: none; color: var(--muted); font-size: .75rem; font-weight: 600;
     padding: 0 2px;
   }
-  .tabs .icon { font-size: 1.55rem; line-height: 1; }
-  .tabs button.active { color: var(--green); background: var(--green-soft); }
+  .tabs .icon { display: flex; line-height: 1; }
+  /* iOS-Stil: aktiver Tab nur farbig, ohne Hintergrund */
+  .tabs button.active { color: #30d158; background: none; }
 
   /* ---------- PC: Seitenleiste links, große Karte rechts ---------- */
   @media (min-width: 900px) {

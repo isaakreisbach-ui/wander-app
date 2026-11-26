@@ -79,7 +79,7 @@
       {#each fromHere.peaks as p, i (p.id)}
         {@const cat = fromHere.cats[`p:${p.id}`]}
         {#if visible(`p:${p.id}`)}
-        <li class:sel={isSel('peak', p.id)}>
+        <li class:sel={isSel('peak', p.id)} onmouseenter={() => (fromHere.hover = { type: 'peak', id: p.id })} onmouseleave={() => (fromHere.hover = null)}>
           <button class="main" onclick={() => select('peak', p.id, p.route)}>
             <span class="dot" style:background={FH_COLORS[i % FH_COLORS.length]}></span>
             <span class="txt">
@@ -111,7 +111,7 @@
       {#each fromHere.hikes as h (h.id)}
         {@const cat = fromHere.cats[`h:${h.id}`]}
         {#if visible(`h:${h.id}`)}
-        <li class:sel={isSel('hike', h.id)}>
+        <li class:sel={isSel('hike', h.id)} onmouseenter={() => (fromHere.hover = { type: 'hike', id: h.id })} onmouseleave={() => (fromHere.hover = null)}>
           <button class="main" onclick={() => select('hike', h.id, h.route)}>
             <span class="dot hike"></span>
             <span class="txt">

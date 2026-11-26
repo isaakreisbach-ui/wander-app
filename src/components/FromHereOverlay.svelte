@@ -10,9 +10,11 @@
 
   function data(): GeoJSON.FeatureCollection {
     if (!fromHere.point) return { type: 'FeatureCollection', features: [] };
-    const sel = fromHere.selected;
+    // Hervorgehoben: Maus darüber (PC) hat Vorrang, sonst der angetippte Vorschlag
+    const sel = fromHere.hover ?? fromHere.selected;
+    const dim = sel ? 0.18 : 0.7; // andere Wege treten zurück, wenn einer hervorgehoben ist
     const line = (coords: number[][], props: Record<string, unknown>): GeoJSON.Feature => ({
-      type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: coords },
+      type: 'Feature', properties: { ...props, dim }, geometry: { type: 'LineString', coordinates: coords },
     });
     // Klettersteig / Gletscher / alpin in ihrer Kategorie-Farbe, sonst normale Farbe
     const catColor = (key: string, normal: string) => {
@@ -28,7 +30,7 @@
         ...fromHere.peaks.map((p, i) => ({ p, i })).filter(({ p }) => visible(`p:${p.id}`)).map(({ p, i }) => line(p.route.map((q) => [q[0], q[1]]), {
           color: catColor(`p:${p.id}`, FH_COLORS[i % FH_COLORS.length]), sel: sel?.type === 'peak' && sel.id === p.id, hike: false,
         })),
-      ],
+      ].sort((a, b) => Number(a.properties?.sel) - Number(b.properties?.sel)), // hervorgehobener Weg oben
     };
   }
 
@@ -36,14 +38,14 @@
     if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: data() });
     if (!map.getLayer('fh-casing')) {
       map.addLayer({ id: 'fh-casing', type: 'line', source: SRC, layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#fff', 'line-width': ['case', ['get', 'sel'], 9, 5], 'line-opacity': ['case', ['get', 'sel'], 1, 0.7] } });
+        paint: { 'line-color': '#fff', 'line-width': ['case', ['get', 'sel'], 10, 5], 'line-opacity': ['case', ['get', 'sel'], 1, ['get', 'dim']] } });
       // Wanderungen gestrichelt, Wege zu Gipfeln durchgezogen
       map.addLayer({ id: 'fh-hike', type: 'line', source: SRC, filter: ['==', ['get', 'hike'], true],
         layout: { 'line-join': 'round' },
-        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'sel'], 6, 3], 'line-opacity': ['case', ['get', 'sel'], 1, 0.5], 'line-dasharray': [2, 1] } });
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'sel'], 6, 3], 'line-opacity': ['case', ['get', 'sel'], 1, ['get', 'dim']], 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'fh-line', type: 'line', source: SRC, filter: ['!=', ['get', 'hike'], true],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'sel'], 6, 3], 'line-opacity': ['case', ['get', 'sel'], 1, 0.7] } });
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'sel'], 7, 3], 'line-opacity': ['case', ['get', 'sel'], 1, ['get', 'dim']] } });
     }
   });
 

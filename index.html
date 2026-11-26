@@ -12,8 +12,16 @@
     <link rel="icon" href="/wander-app/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/wander-app/apple-touch-icon-180x180.png" />
     <title>Wanderapp</title>
+    <!-- Startbildschirm: sofort dunkel statt weißem Aufblitzen, bis die App geladen ist -->
+    <style>
+      html, body { margin: 0; height: 100%; background: #1c1c1e; }
+      #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #1c1c1e;
+        color: #f2f2f7; font: 600 18px -apple-system, system-ui, sans-serif; }
+      #splash img { width: 96px; height: 96px; border-radius: 22px; display: block; margin: 0 auto 14px; }
+    </style>
   </head>
   <body>
+    <div id="splash"><div><img src="/wander-app/pwa-192x192.png" alt="" />Wanderapp</div></div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

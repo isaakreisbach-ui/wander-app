@@ -50,6 +50,7 @@
   // ---------- Steuerung ----------
   async function start() {
     recUi.follow = true;
+    recUi.mode = 'zahlen'; // unterwegs zuerst die großen Zahlen
     await recorder.start();
   }
 

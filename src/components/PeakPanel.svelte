@@ -72,8 +72,8 @@
     <h4>{isPoint ? 'Wanderungen dorthin' : 'Aufstiege – Hin & zurück'}</h4>
     <ul class="list">
       {#each peakState.suggestions as s, i (s.start.id)}
-        <li class:sel={peakState.selected === i}>
-          <button class="main" onclick={() => (peakState.selected = peakState.selected === i ? null : i)}>
+        <li class:sel={peakState.selected === i} onmouseenter={() => (peakState.hover = i)} onmouseleave={() => (peakState.hover = null)}>
+          <button class="main" onclick={() => { peakState.selected = peakState.selected === i ? null : i; if (peakState.selected === i) fitRoute(s.route); }}>
             <span class="dot" style:background={SUGGEST_COLORS[i % SUGGEST_COLORS.length]}></span>
             <span class="txt">
               <span class="name">{START_ICON[s.start.kind]} {s.start.name}</span>

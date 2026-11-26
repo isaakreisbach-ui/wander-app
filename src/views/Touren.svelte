@@ -6,6 +6,7 @@
   import { planner } from '../lib/planner.svelte';
   import { ui } from '../lib/ui.svelte';
   import OfflineAreas from '../components/OfflineAreas.svelte';
+  import SwipeRow from '../components/SwipeRow.svelte';
 
   let tours = $state<Tour[] | null>(null);
   let filter = $state('');
@@ -64,6 +65,7 @@
   <ul class="list">
     {#each shown as t (t.id)}
       <li class="tour" class:current={planner.tourId === t.id}>
+        <SwipeRow onShare={() => (ui.share = t)} onDelete={() => deleteTour(t)}>
         <button class="main" onclick={() => openTour(t)}>
           <span class="name">{t.name}</span>
           <span class="facts">
@@ -87,6 +89,7 @@
           <button onclick={() => renameTour(t)}>Umbenennen</button>
           <button class="danger" onclick={() => deleteTour(t)}>Löschen</button>
         </div>
+        </SwipeRow>
       </li>
     {:else}
       <li class="muted">Keine Tour passt zur Suche.</li>
