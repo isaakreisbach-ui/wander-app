@@ -5,6 +5,7 @@
   import PlanOverlay from './PlanOverlay.svelte';
   import RecordOverlay from './RecordOverlay.svelte';
   import PoiOverlay from './PoiOverlay.svelte';
+  import MarkedRoutesOverlay from './MarkedRoutesOverlay.svelte';
   import PeakOverlay from './PeakOverlay.svelte';
   import FromHereOverlay from './FromHereOverlay.svelte';
   import FlyoverBar from './FlyoverBar.svelte';
@@ -14,7 +15,7 @@
 
   setWorkerUrl(workerUrl);
   import {
-    BASES, styleFor, addTrailsOverlay, setTrailsVisible, mapSettings, saveMapSettings, adjustStandardStyle,
+    BASES, styleFor, addTrailsOverlay, mapSettings, saveMapSettings, adjustStandardStyle,
     mapState, runStyleHooks, type BaseId,
   } from '../lib/map.svelte';
 
@@ -81,7 +82,7 @@
     map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
 
     map.on('style.load', () => {
-      addTrailsOverlay(map, mapSettings.trails);
+      addTrailsOverlay(map, false); // bunte Bild-Ebene nicht mehr anzeigen – ersetzt durch gestrichelte Routen
       adjustStandardStyle(map); // Gipfel über den Wanderwegen, Straßennamen aus
       runStyleHooks(map);
     });
@@ -113,13 +114,14 @@
   function toggleTrails() {
     mapSettings.trails = !mapSettings.trails;
     saveMapSettings();
-    if (mapState.map) setTrailsVisible(mapState.map, mapSettings.trails);
+
   }
 </script>
 
 <div class="wrap">
   <div class="map" bind:this={container}></div>
 
+  <MarkedRoutesOverlay />
   <PoiOverlay />
   <PeakOverlay />
   <FromHereOverlay />
@@ -147,7 +149,7 @@
         <div class="menu-title">Zusätzlich</div>
         <button class="opt" class:sel={mapSettings.trails} onclick={toggleTrails}>
           <span class="check" aria-hidden="true">{mapSettings.trails ? '✓' : ''}</span>
-          <span><b>Markierte Routen (bunt)</b><small>Waymarked Trails mit Kürzeln – nur online</small></span>
+          <span><b>Markierte Wanderrouten</b><small>Rot gestrichelt mit Kürzel – ab Zoom 12, nur online</small></span>
         </button>
         <button class="opt" class:sel={mapSettings.pois} onclick={() => { mapSettings.pois = !mapSettings.pois; saveMapSettings(); }}>
           <span class="check" aria-hidden="true">{mapSettings.pois ? '✓' : ''}</span>
