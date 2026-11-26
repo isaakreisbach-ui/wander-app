@@ -28,6 +28,8 @@
   import SurfaceBar from '../components/SurfaceBar.svelte';
   import AvalancheCard from '../components/AvalancheCard.svelte';
   import StagesCard from '../components/StagesCard.svelte';
+  import SunCard from '../components/SunCard.svelte';
+  import TransitCard from '../components/TransitCard.svelte';
   let showRound = $state(false);
 
   // Anteil der Strecke je Steilheit (in km)
@@ -205,6 +207,8 @@
     <AvalancheCard />
     <WeatherCard route={planner.route} />
     {#if planner.stats}<StartTimeCard stats={planner.stats} />{/if}
+    <SunCard />
+    <TransitCard />
     {#if planner.stats}<GearCard stats={planner.stats} tourKey={planner.tourId ?? 'entwurf'} />{/if}
     <RoutePoisCard />
     <StagesCard />

@@ -7,6 +7,7 @@
   import { ui } from '../lib/ui.svelte';
   import OfflineAreas from '../components/OfflineAreas.svelte';
   import SwipeRow from '../components/SwipeRow.svelte';
+  import JournalCard from '../components/JournalCard.svelte';
 
   let tours = $state<Tour[] | null>(null);
   let filter = $state('');
@@ -49,6 +50,8 @@
     />
   </div>
 </div>
+
+{#if tours?.length}<JournalCard {tours} />{/if}
 
 {#if tours === null}
   <p class="muted">Lade …</p>

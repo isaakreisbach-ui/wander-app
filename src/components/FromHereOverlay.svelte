@@ -3,7 +3,7 @@
   import { Marker, type GeoJSONSource } from 'maplibre-gl';
   import type * as GeoJSON from 'geojson';
   import { mapState, onStyleReady } from '../lib/map.svelte';
-  import { fromHere, FH_COLORS, visible } from '../lib/fromhere.svelte';
+  import { fromHere, FH_COLORS, visible, passesPeak, passesHike } from '../lib/fromhere.svelte';
   import { CATEGORY_STYLE } from '../lib/alpine.svelte';
 
   const SRC = 'from-here';
@@ -24,10 +24,10 @@
     return {
       type: 'FeatureCollection',
       features: [
-        ...fromHere.hikes.filter((h) => visible(`h:${h.id}`)).map((h) => line(h.route.map((p) => [p[0], p[1]]), {
+        ...fromHere.hikes.filter((h) => visible(`h:${h.id}`) && passesHike(h)).map((h) => line(h.route.map((p) => [p[0], p[1]]), {
           color: catColor(`h:${h.id}`, '#1d7a3e'), sel: sel?.type === 'hike' && sel.id === h.id, hike: true,
         })),
-        ...fromHere.peaks.map((p, i) => ({ p, i })).filter(({ p }) => visible(`p:${p.id}`)).map(({ p, i }) => line(p.route.map((q) => [q[0], q[1]]), {
+        ...fromHere.peaks.map((p, i) => ({ p, i })).filter(({ p }) => visible(`p:${p.id}`) && passesPeak(p)).map(({ p, i }) => line(p.route.map((q) => [q[0], q[1]]), {
           color: catColor(`p:${p.id}`, FH_COLORS[i % FH_COLORS.length]), sel: sel?.type === 'peak' && sel.id === p.id, hike: false,
         })),
       ].sort((a, b) => Number(a.properties?.sel) - Number(b.properties?.sel)), // hervorgehobener Weg oben

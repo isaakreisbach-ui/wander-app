@@ -25,7 +25,9 @@ export const ui = $state<{
   emergency: boolean;
   settings: boolean;
   intro: boolean;
+  ai: boolean;
 }>({
+  ai: false,
   emergency: false,
   settings: false,
   intro: !localStorage.getItem('wander.intro.done'),

@@ -15,6 +15,20 @@
     for (let i = 0; i < r.length; i++) { const d = distance(pos, r[i]); if (d < bd) { bd = d; best = i; } }
     return { off: bd, remaining: planner.cum[planner.cum.length - 1] - planner.cum[best] };
   });
+
+  // Abweichungs-Warnung: ab 100 m neben der Route (GPS-Ungenauigkeit abgezogen), zurück unter 50 m
+  let offRoute = $state(false);
+  let dismissedAt = $state(0);
+  $effect(() => {
+    const g = guide;
+    if (!g || recorder.status !== 'recording') { offRoute = false; return; }
+    const off = g.off - (recorder.accuracy ?? 0);
+    if (!offRoute && off > 100) {
+      offRoute = true;
+      try { navigator.vibrate?.([200, 100, 200]); } catch { /* iPhone kann das nicht */ }
+    } else if (offRoute && g.off < 50) offRoute = false;
+  });
+  const showBanner = $derived(offRoute && Date.now() - dismissedAt > 5 * 60e3);
 </script>
 
 {#if recorder.status !== 'idle'}
@@ -48,7 +62,13 @@
       <p class="gps">GPS ± {recorder.accuracy !== null ? Math.round(recorder.accuracy) : '–'} m</p>
     </div>
   {:else}
-    <button class="pill" onclick={() => (recUi.mode = 'zahlen')}>
+    {#if showBanner && guide}
+      <div class="offbanner" role="alert">
+        <span>⚠️ Du bist {formatDistance(guide.off)} von der Route abgekommen</span>
+        <button onclick={() => (dismissedAt = Date.now())}>OK</button>
+      </div>
+    {/if}
+    <button class="pill" class:offpill={offRoute} onclick={() => (recUi.mode = 'zahlen')}>
       <span class="dot" class:paused={recorder.status === 'paused'}></span>
       {formatClock(recorder.elapsedMs)} · {km(recorder.distance)} km · 🔢 Zahlen
     </button>
@@ -84,6 +104,15 @@
     background: rgba(20, 20, 22, .9); color: #fff; box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
     display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums;
   }
+  .offbanner {
+    position: fixed; z-index: 31; left: 50%; transform: translateX(-50%); top: calc(64px + var(--safe-top) + 110px);
+    width: min(440px, calc(100% - 24px)); display: flex; align-items: center; gap: 10px; justify-content: space-between;
+    background: #ff3b30; color: #fff; border-radius: 14px; padding: 10px 14px; font-weight: 700; box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .offbanner button { border: 1.5px solid #fff; background: none; color: #fff; border-radius: 10px; padding: 5px 12px; font-weight: 700; }
+  @keyframes pulse { 50% { opacity: .82; } }
+  .pill.offpill { background: rgba(255, 59, 48, .92); }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: #ff453a; }
   .dot.paused { background: #ffd60a; }
   @media (min-width: 900px) { .hud { left: var(--sidebar); top: 52px; bottom: 0; } }

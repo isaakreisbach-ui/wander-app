@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.23 – Wegbeschaffenheit, Lawinenbericht, Etappen, Offline komplett<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.24 – KI-Assistent, Tour-Suche, Tourenbuch, Sonne & Schatten, Anreise<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>

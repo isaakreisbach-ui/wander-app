@@ -1,12 +1,19 @@
 <script lang="ts">
-  import { fromHere, closeFromHere, FH_COLORS, toggleCategory, visible, type PeakOption, type HikeOption } from '../lib/fromhere.svelte';
+  import { fromHere, closeFromHere, FH_COLORS, toggleCategory, visible as catVisible, fhFilter, passesPeak, passesHike, hikeHours, loadHutsAround, type PeakOption, type HikeOption } from '../lib/fromhere.svelte';
   import { CATEGORY_STYLE, type RouteCategory } from '../lib/alpine.svelte';
 
   const CATS: RouteCategory[] = ['wander', 'alpine', 'via_ferrata', 'glacier'];
   const count = (c: RouteCategory) => Object.values(fromHere.cats).filter((x) => x.cat === c).length;
+  const showPeak = (p: PeakOption) => catVisible(`p:${p.id}`) && passesPeak(p);
+  const showHike = (h: HikeOption) => catVisible(`h:${h.id}`) && passesHike(h);
   const hiddenCount = $derived(
-    fromHere.peaks.filter((p) => !visible(`p:${p.id}`)).length + fromHere.hikes.filter((h) => !visible(`h:${h.id}`)).length,
+    fromHere.peaks.filter((p) => !showPeak(p)).length + fromHere.hikes.filter((h) => !showHike(h)).length,
   );
+  const HOURS = [0, 2, 4, 6];
+  function toggleHut() {
+    fhFilter.hut = !fhFilter.hut;
+    if (fhFilter.hut) loadHutsAround();
+  }
   import { planner, tourFromTrack } from '../lib/planner.svelte';
   import { confirmDiscard, fitRoute, openTour } from '../lib/tours';
   import { correctElevation } from '../lib/recorder.svelte';
@@ -65,6 +72,16 @@
       </button>
     {/each}
   </div>
+  <div class="filters" role="group" aria-label="Filter">
+    <div class="seg">
+      {#each HOURS as h}
+        <button class:on={fhFilter.maxH === h} onclick={() => (fhFilter.maxH = h)}>{h ? `bis ${h} h` : 'Alle'}</button>
+      {/each}
+    </div>
+    <button class="tog" class:on={fhFilter.loop} onclick={() => (fhFilter.loop = !fhFilter.loop)}>Rundweg</button>
+    <button class="tog" class:on={fhFilter.hut} onclick={toggleHut}>Mit Einkehr</button>
+  </div>
+  {#if fhFilter.hut}<p class="note">„Mit Einkehr“: Hütte, Gasthaus oder Café höchstens 300 m vom Weg (OpenStreetMap).</p>{/if}
   {#if fromHere.catStatus === 'loading'}<p class="status small"><span class="spin"></span>Prüfe auf Klettersteige und Gletscher …</p>{/if}
   {#if hiddenCount}<p class="note">{hiddenCount} Vorschläge ausgeblendet.</p>{/if}
 
@@ -78,7 +95,7 @@
     <ul class="list">
       {#each fromHere.peaks as p, i (p.id)}
         {@const cat = fromHere.cats[`p:${p.id}`]}
-        {#if visible(`p:${p.id}`)}
+        {#if showPeak(p)}
         <li class:sel={isSel('peak', p.id)} onmouseenter={() => (fromHere.hover = { type: 'peak', id: p.id })} onmouseleave={() => (fromHere.hover = null)}>
           <button class="main" onclick={() => select('peak', p.id, p.route)}>
             <span class="dot" style:background={FH_COLORS[i % FH_COLORS.length]}></span>
@@ -110,13 +127,13 @@
     <ul class="list">
       {#each fromHere.hikes as h (h.id)}
         {@const cat = fromHere.cats[`h:${h.id}`]}
-        {#if visible(`h:${h.id}`)}
+        {#if showHike(h)}
         <li class:sel={isSel('hike', h.id)} onmouseenter={() => (fromHere.hover = { type: 'hike', id: h.id })} onmouseleave={() => (fromHere.hover = null)}>
           <button class="main" onclick={() => select('hike', h.id, h.route)}>
             <span class="dot hike"></span>
             <span class="txt">
               <span class="name">{h.name}{h.ref && !h.name.includes(h.ref) ? ` (${h.ref})` : ''}</span>
-              <span class="sub">{formatDistance(h.length)} · {h.loop ? 'Rundweg' : 'Streckenwanderung'} · {GROUP[h.group] ?? ''}</span>
+              <span class="sub">{formatDistance(h.length)} · ca. {formatDuration(hikeHours(h))} · {h.loop ? 'Rundweg' : 'Streckenwanderung'} · {GROUP[h.group] ?? ''}</span>
               <span class="sub">{h.near < 50 ? 'Führt direkt hier vorbei' : `${formatDistance(h.near)} entfernt`}{h.itinerary ? ` · ${h.itinerary}` : ''}</span>
               {#if cat}<span class="cat" style:--c={CATEGORY_STYLE[cat.cat].color}>{CATEGORY_STYLE[cat.cat].icon} {CATEGORY_STYLE[cat.cat].label}{cat.grade ? ` ${cat.grade}` : ''}</span>{/if}
             </span>
@@ -167,6 +184,12 @@
   .detail .btn { width: 100%; background: #007aff; border-color: #0a84ff; border-radius: 12px; }
   .more { color: #0a84ff; font-size: .85rem; text-decoration: none; }
   .note { font-size: .75rem; color: #8e8e93; margin: 8px 2px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .seg { display: flex; background: var(--surface2); border-radius: 9px; padding: 2px; }
+  .seg button { border: 0; background: none; color: var(--text2); font-size: .78rem; font-weight: 600; padding: 5px 9px; border-radius: 7px; }
+  .seg button.on { background: var(--surface3); color: var(--text); }
+  .tog { border: 1.5px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 5px 11px; font-size: .78rem; font-weight: 600; }
+  .tog.on { border-color: #0a84ff; color: var(--text); background: rgba(10, 132, 255, .18); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
   .chip {
     border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 14%, #2c2c2e); color: var(--text);

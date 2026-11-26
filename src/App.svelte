@@ -4,6 +4,7 @@
   import TrackHud from './components/TrackHud.svelte';
   import EmergencyDialog from './components/EmergencyDialog.svelte';
   import SettingsDialog from './components/SettingsDialog.svelte';
+  import AssistantDialog from './components/AssistantDialog.svelte';
   import IntroDialog from './components/IntroDialog.svelte';
   import Planen from './views/Planen.svelte';
   import Touren from './views/Touren.svelte';
@@ -132,6 +133,9 @@
         </button>
       {/if}
       {#if !online}<div class="offline">Offline</div>{/if}
+      <button class="topbtn ai" onclick={() => (ui.ai = true)} aria-label="KI-Assistent">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+      </button>
       <button class="topbtn" onclick={() => (ui.settings = true)} aria-label="Einstellungen">⚙︎</button>
       <button class="sos" onclick={() => (ui.emergency = true)} aria-label="Notfall">SOS</button>
     </div>
@@ -176,6 +180,7 @@
   {#if ui.scanner}<QrScanner />{/if}
   {#if ui.emergency}<EmergencyDialog />{/if}
   {#if ui.settings}<SettingsDialog />{/if}
+  {#if ui.ai}<AssistantDialog />{/if}
   {#if ui.intro}<IntroDialog />{/if}
   <ReceiveDialogs />
   <OfflineProgress />
@@ -222,6 +227,7 @@
   .sos { border: 0; border-radius: 999px; background: #d70015; color: #fff; font-weight: 800; font-size: .8rem; padding: 4px 10px; letter-spacing: .05em; }
   .topbtn { border: 0; background: none; color: #d1d1d6; font-size: 1.25rem; width: 34px; height: 34px; border-radius: 50%; }
   .topbtn:active { background: #2c2c2e; }
+  .topbtn.ai { display: grid; place-items: center; color: #bf5af2; }
   .offline {
     background: var(--amber); color: #000; font-weight: 700;
     padding: 2px 10px; border-radius: 999px; font-size: .85rem;

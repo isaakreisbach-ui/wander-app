@@ -6,6 +6,7 @@ import { overpass } from './overpass';
 import { routeSegment } from './routing';
 import { distance, cumulative, climb, walkingTimeHours, difficulty, maxGrade, type Pt, type Difficulty } from './geo';
 import { analyzeMany, categoryOf, type RouteCategory } from './alpine.svelte';
+import { poiState, poisAlongRoute, loadCells, cellsForBbox } from './pois.svelte';
 
 export type PeakOption = {
   id: string; name: string; ele?: number; lng: number; lat: number;
@@ -203,7 +204,7 @@ async function loadHikes(lng: number, lat: number, signal: AbortSignal) {
         if (length > 40000) continue; // zu lang für eine Tagestour
         let near = Infinity;
         for (const p of route) near = Math.min(near, distance([lng, lat], p));
-        const loop = distance(route[0], route[route.length - 1]) < 300;
+        const loop = length > 1500 && distance(route[0], route[route.length - 1]) < 300;
         out.push({
           id: c.id, name: c.name || c.ref || 'Wanderweg', ref: c.ref ?? '', group: c.group,
           itinerary: (c.itinerary ?? []).join(' – '), length, loop, near: Math.round(near), route,
@@ -220,4 +221,42 @@ async function loadHikes(lng: number, lat: number, signal: AbortSignal) {
   }
 }
 
-export const FH_COLORS = ['#007aff', '#af52de', '#ff9500', '#34c759', '#ff2d55', '#5ac8fa'];
+// ---------- Filter (Tour-Suche) ----------
+
+export type FhFilter = { maxH: number; loop: boolean; hut: boolean };
+export const fhFilter = $state<FhFilter>({ maxH: 0, loop: false, hut: false });
+
+/** Gehzeit einer markierten Wanderung (ohne Höhendaten: grob nach Länge, 4 km/h) */
+export const hikeHours = (h: HikeOption) => h.length / 4000;
+
+function hasHut(route: Pt[]) {
+  return poisAlongRoute(route, cumulative(route), poiState.pois, 300).some((p) => p.kind === 'hut' || p.kind === 'food');
+}
+
+/** Hütten/Einkehr in der Umgebung nachladen (für den Hütten-Filter) */
+export function loadHutsAround() {
+  const p = fromHere.point;
+  if (p) loadCells(cellsForBbox(p.lng - 0.1, p.lat - 0.07, p.lng + 0.1, p.lat + 0.07), 60);
+}
+
+export function passesPeak(p: PeakOption) {
+  if (fhFilter.maxH && p.hoursRound > fhFilter.maxH) return false;
+  if (fhFilter.hut && !hasHut(p.route)) return false;
+  return true; // Gipfel: hin und zurück, also immer „Rundtour“
+}
+export function passesHike(h: HikeOption) {
+  if (fhFilter.maxH && hikeHours(h) > fhFilter.maxH) return false;
+  if (fhFilter.loop && !h.loop) return false;
+  if (fhFilter.hut && !hasHut(h.route)) return false;
+  return true;
+}
+
+/** Warten, bis die Suche fertig ist (für den KI-Assistenten) */
+export async function waitFromHere(maxMs = 60000) {
+  const t0 = Date.now();
+  while ((fromHere.peakStatus === 'loading' || fromHere.hikeStatus === 'loading') && Date.now() - t0 < maxMs) {
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+export const FH_COLORS =['#007aff', '#af52de', '#ff9500', '#34c759', '#ff2d55', '#5ac8fa'];
