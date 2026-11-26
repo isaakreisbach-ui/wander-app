@@ -31,6 +31,8 @@ export function styleFor(base: BaseId): string | StyleSpecification {
           maxzoom: 18,
           attribution: 'Luftbild: © Esri, Maxar, Earthstar Geographics, GIS User Community',
         },
+        // Wege und Gipfel aus OpenFreeMap über das Luftbild legen
+        openmaptiles: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
       },
       layers: [{ id: 'satellit', type: 'raster', source: 'satellit' }],
     };
@@ -92,6 +94,7 @@ function nextLayerAfter(map: MlMap, id: string): string | undefined {
  */
 export function adjustStandardStyle(map: MlMap) {
   if (!map.getSource('openmaptiles')) return;
+  const sat = !!map.getSource('satellit');
   for (const layer of map.getStyle().layers ?? []) {
     if ('source-layer' in layer && layer['source-layer'] === 'transportation_name') {
       map.setLayoutProperty(layer.id, 'visibility', 'none');
@@ -115,20 +118,39 @@ export function adjustStandardStyle(map: MlMap) {
     }, nextLayerAfter(map, 'road_service_track'));
   }
 
+  // Satellit: eigene gestrichelte Wege (hell, damit man sie auf dem Luftbild sieht)
+  if (sat && !map.getLayer('sat-paths')) {
+    const base = { type: 'line' as const, source: 'openmaptiles', 'source-layer': 'transportation', minzoom: 12, layout: { 'line-join': 'round' as const } };
+    map.addLayer({ ...base, id: 'sat-casing', filter: ['match', ['get', 'class'], ['path', 'pedestrian', 'track'], true, false],
+      paint: { 'line-color': '#000', 'line-opacity': 0.35, 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2.5, 16, 5.5] } });
+    map.addLayer({ ...base, id: 'sat-tracks', filter: ['==', ['get', 'class'], 'track'],
+      paint: { 'line-color': '#ffffff', 'line-width': width, 'line-dasharray': [3, 1.5] } });
+    map.addLayer({ ...base, id: 'sat-paths', filter: ['match', ['get', 'class'], ['path', 'pedestrian'], true, false],
+      paint: { 'line-color': '#ffd166', 'line-width': width, 'line-dasharray': [2, 1.2] } });
+  }
+
   if (map.getLayer('peaks-label')) return;
+  // Gipfelkreuz als Symbol
+  if (!map.hasImage('peak-cross')) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 44;
+    const g = c.getContext('2d')!;
+    const cross = (color: string, w: number) => {
+      g.strokeStyle = color; g.lineWidth = w; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(22, 6); g.lineTo(22, 40); g.moveTo(12, 15); g.lineTo(32, 15); g.stroke();
+    };
+    cross(sat ? '#000' : '#fff', 9);
+    cross(sat ? '#fff' : '#2b2118', 4);
+    map.addImage('peak-cross', g.getImageData(0, 0, 44, 44), { pixelRatio: 2 });
+  }
   map.addLayer({
     id: 'peaks-dot',
-    type: 'circle',
+    type: 'symbol',
     source: 'openmaptiles',
     'source-layer': 'mountain_peak',
-    minzoom: 10,
+    minzoom: 11,
     filter: ['in', ['get', 'class'], ['literal', ['peak', 'volcano']]],
-    paint: {
-      'circle-radius': 3.5,
-      'circle-color': '#6b4a2b',
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-width': 1.5,
-    },
+    layout: { 'icon-image': 'peak-cross', 'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.7, 15, 1.1], 'icon-allow-overlap': true, 'icon-anchor': 'bottom' },
   });
   map.addLayer({
     id: 'peaks-label',
@@ -147,15 +169,13 @@ export function adjustStandardStyle(map: MlMap) {
       'text-font': ['Noto Sans Bold'],
       'text-size': ['interpolate', ['linear'], ['zoom'], 10, 11, 15, 14],
       'text-anchor': 'top',
-      'text-offset': [0, 0.5],
+      'text-offset': [0, 0.4],
       'text-max-width': 9,
       'symbol-sort-key': ['coalesce', ['get', 'rank'], 99],
     },
-    paint: {
-      'text-color': '#4a2f17',
-      'text-halo-color': '#ffffff',
-      'text-halo-width': 1.6,
-    },
+    paint: sat
+      ? { 'text-color': '#ffffff', 'text-halo-color': 'rgba(0,0,0,0.85)', 'text-halo-width': 1.8 }
+      : { 'text-color': '#4a2f17', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
   });
 }
 

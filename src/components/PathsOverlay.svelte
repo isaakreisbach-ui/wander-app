@@ -40,16 +40,17 @@
   }
 
   onStyleReady((map) => {
-    if (!map.getSource('openmaptiles')) return; // nur auf der Standard-Karte
+    if (!map.getSource('openmaptiles')) return; // Standard- und Satelliten-Karte
+    const sat = !!map.getSource('satellit');
     if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: data() });
     if (!map.getLayer('lz-paths')) {
       // nur zwischen Zoom 12 und 14 – darüber übernimmt die Karte selbst
       map.addLayer({ id: 'lz-paths', type: 'line', source: SRC, minzoom: 12, maxzoom: 14,
         paint: {
-          'line-color': ['case', ['get', 'track'], '#8a6a3b', '#b5442b'],
+          'line-color': ['case', ['get', 'track'], sat ? '#ffffff' : '#8a6a3b', sat ? '#ffd166' : '#b5442b'],
           'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 14, 1.6],
           'line-dasharray': [2, 1.2],
-        } }, map.getLayer('road_path_pedestrian') ? 'road_path_pedestrian' : undefined);
+        } }, map.getLayer('road_path_pedestrian') ? 'road_path_pedestrian' : map.getLayer('sat-casing') ? 'sat-casing' : undefined);
     }
   });
 
@@ -66,7 +67,7 @@
       clearTimeout(t);
       t = setTimeout(() => {
         const z = map.getZoom();
-        if (mapSettings.base !== 'standard' || z < 12 || z >= 14 || !navigator.onLine) return;
+        if (mapSettings.base === 'topo' || z < 12 || z >= 14 || !navigator.onLine) return;
         const b = map.getBounds();
         const cells = cellsForBbox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth());
         if (cells.length <= 9) cells.forEach((c) => loadCell(c));
