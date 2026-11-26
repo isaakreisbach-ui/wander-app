@@ -22,7 +22,13 @@ export const ui = $state<{
   handoff: string | null;
   scanner: boolean;
   pasteLink: boolean;
+  emergency: boolean;
+  settings: boolean;
+  intro: boolean;
 }>({
+  emergency: false,
+  settings: false,
+  intro: !localStorage.getItem('wander.intro.done'),
   view: desktop ? 'planen' : 'karte',
   toast: null,
   share: null,

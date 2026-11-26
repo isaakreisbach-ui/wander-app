@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.21 – Gipfelkreuze, Wege auf Satellit<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.22 – Sicherung, SOS, Einstellungen, Rundtour<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>

@@ -22,7 +22,10 @@
   import StartTimeCard from '../components/StartTimeCard.svelte';
   import RoutePoisCard from '../components/RoutePoisCard.svelte';
   import { flyover } from '../lib/flyover.svelte';
-  import { mapSettings, saveMapSettings } from '../lib/map.svelte';
+  import { mapSettings, saveMapSettings, mapState } from '../lib/map.svelte';
+  import { favs } from '../lib/favorites.svelte';
+  import RoundTripCard from '../components/RoundTripCard.svelte';
+  let showRound = $state(false);
 
   // Anteil der Strecke je Steilheit (in km)
   const gradeShare = $derived.by(() => {
@@ -96,6 +99,15 @@
       <p class="muted">Rechtsklick auf die Karte öffnet ein Menü. Rückgängig: <kbd>Strg+Z</kbd>, Wiederholen: <kbd>Strg+Y</kbd>.</p>
     {/if}
     <p class="muted">Tipp: Mit der Suche oben springst du schnell zum Startort.</p>
+    {#if favs.list.length}
+      <div class="favs">
+        {#each favs.list as f (f.id)}
+          <button class="fav" onclick={() => { planner.add(f.lng, f.lat); mapState.map?.flyTo({ center: [f.lng, f.lat], zoom: 14 }); }}>⭐ Start bei {f.name}</button>
+        {/each}
+      </div>
+    {/if}
+    <button class="btn round" onclick={() => (showRound = !showRound)}>🔄 Rundtour vorschlagen</button>
+    {#if showRound}<RoundTripCard />{/if}
   </div>
 {:else}
   <div class="savebar">
@@ -225,6 +237,9 @@
 
   .profile-card { padding: 8px 6px 4px; }
   .fly { width: 100%; margin: 0 0 12px; }
+  .favs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .fav { border: 0; border-radius: 999px; background: var(--surface2); color: var(--text); padding: 8px 12px; font-weight: 600; font-size: .85rem; }
+  .round { width: 100%; margin-top: 6px; }
   .steep { background: var(--surface); border-radius: 16px; padding: 4px 14px; margin: -4px 0 10px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .05); }
   .ios-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; cursor: pointer; }
   .lbl { display: flex; flex-direction: column; }

@@ -97,5 +97,10 @@
     load();
     return () => { map.off('moveend', load); clearTimeout(t); };
   });
-  $effect(() => { if (mapSettings.trails) mapState.map?.fire('moveend'); });
+  // Beim Einschalten nachladen – außerhalb des Effekts auslösen, sonst schaukelt es sich auf
+  $effect(() => {
+    if (!mapSettings.trails) return;
+    const map = mapState.map;
+    setTimeout(() => map?.fire('moveend'), 0);
+  });
 </script>

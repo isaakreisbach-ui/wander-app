@@ -2,6 +2,9 @@
   import MapView from './components/MapView.svelte';
   import TabIcon from './components/TabIcon.svelte';
   import TrackHud from './components/TrackHud.svelte';
+  import EmergencyDialog from './components/EmergencyDialog.svelte';
+  import SettingsDialog from './components/SettingsDialog.svelte';
+  import IntroDialog from './components/IntroDialog.svelte';
   import Planen from './views/Planen.svelte';
   import Touren from './views/Touren.svelte';
   import Aufzeichnen from './views/Aufzeichnen.svelte';
@@ -129,6 +132,8 @@
         </button>
       {/if}
       {#if !online}<div class="offline">Offline</div>{/if}
+      <button class="topbtn" onclick={() => (ui.settings = true)} aria-label="Einstellungen">⚙︎</button>
+      <button class="sos" onclick={() => (ui.emergency = true)} aria-label="Notfall">SOS</button>
     </div>
   </header>
 
@@ -169,6 +174,9 @@
 
   {#if ui.share}<ShareDialog tour={ui.share} />{/if}
   {#if ui.scanner}<QrScanner />{/if}
+  {#if ui.emergency}<EmergencyDialog />{/if}
+  {#if ui.settings}<SettingsDialog />{/if}
+  {#if ui.intro}<IntroDialog />{/if}
   <ReceiveDialogs />
   <OfflineProgress />
   <TrackHud />
@@ -211,6 +219,9 @@
     background: #c62828; color: #fff; font-variant-numeric: tabular-nums;
   }
   .rec.paused { background: #ffd54f; color: #000; }
+  .sos { border: 0; border-radius: 999px; background: #d70015; color: #fff; font-weight: 800; font-size: .8rem; padding: 4px 10px; letter-spacing: .05em; }
+  .topbtn { border: 0; background: none; color: #d1d1d6; font-size: 1.25rem; width: 34px; height: 34px; border-radius: 50%; }
+  .topbtn:active { background: #2c2c2e; }
   .offline {
     background: var(--amber); color: #000; font-weight: 700;
     padding: 2px 10px; border-radius: 999px; font-size: .85rem;
