@@ -79,6 +79,13 @@ export function setTrailsVisible(map: MlMap, visible: boolean) {
   if (map.getLayer(TRAILS_LAYER)) map.setLayoutProperty(TRAILS_LAYER, 'visibility', visible ? 'visible' : 'none');
 }
 
+/** Id der Ebene direkt über `id` (um eine eigene Ebene genau darüber einzuschieben) */
+function nextLayerAfter(map: MlMap, id: string): string | undefined {
+  const layers = map.getStyle().layers ?? [];
+  const i = layers.findIndex((l) => l.id === id);
+  return i >= 0 && i + 1 < layers.length ? layers[i + 1].id : undefined;
+}
+
 /**
  * Anpassungen an der Standard-Karte (OpenFreeMap „Liberty“) für Wanderer:
  * Straßennamen und Straßennummern ausblenden, Gipfel mit Namen und Höhe einblenden.
@@ -90,6 +97,24 @@ export function adjustStandardStyle(map: MlMap) {
       map.setLayoutProperty(layer.id, 'visibility', 'none');
     }
   }
+  // Wanderkarten-Look: Pfade rotbraun gestrichelt, Feld-/Forstwege braun gestrichelt
+  const width = ['interpolate', ['linear'], ['zoom'], 12, 1, 14, 1.8, 16, 2.6, 18, 4] as unknown as number;
+  for (const id of ['road_path_pedestrian', 'bridge_path_pedestrian', 'tunnel_path_pedestrian']) {
+    if (!map.getLayer(id)) continue;
+    map.setPaintProperty(id, 'line-color', '#b5442b');
+    map.setPaintProperty(id, 'line-width', width);
+    map.setPaintProperty(id, 'line-dasharray', [2, 1.2]);
+    map.setPaintProperty(id, 'line-opacity', 0.95);
+  }
+  if (!map.getLayer('hike-tracks') && map.getLayer('road_service_track')) {
+    map.addLayer({
+      id: 'hike-tracks', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', minzoom: 12,
+      filter: ['all', ['==', ['get', 'class'], 'track'], ['match', ['get', 'brunnel'], ['tunnel'], false, true]],
+      layout: { 'line-join': 'round' },
+      paint: { 'line-color': '#8a6a3b', 'line-width': width as never, 'line-dasharray': [3, 1.5] },
+    }, nextLayerAfter(map, 'road_service_track'));
+  }
+
   if (map.getLayer('peaks-label')) return;
   map.addLayer({
     id: 'peaks-dot',
@@ -137,11 +162,12 @@ export function adjustStandardStyle(map: MlMap) {
 // ---------- gespeicherte Einstellungen ----------
 
 const KEY = 'wander.map.v1';
-type Saved = { base: BaseId; trails: boolean; pois: boolean; diffColors: boolean; center: [number, number]; zoom: number };
+type Saved = { base: BaseId; trails: boolean; pois: boolean; diffColors: boolean; center: [number, number]; zoom: number; pathsV2?: boolean };
 
 const DEFAULTS: Saved = {
   base: 'standard',
-  trails: true,
+  trails: false,
+  pathsV2: true,
   pois: true,
   diffColors: false,
   center: [8.4573, 50.2324], // Großer Feldberg
@@ -150,7 +176,10 @@ const DEFAULTS: Saved = {
 
 function load(): Saved {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+    // Einmalig: neue gestrichelte Wege – die bunte Wanderwege-Ebene standardmäßig aus
+    if (!saved.pathsV2) { saved.trails = false; saved.pathsV2 = true; }
+    return { ...DEFAULTS, ...saved };
   } catch {
     return DEFAULTS;
   }

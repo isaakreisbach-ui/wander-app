@@ -147,7 +147,7 @@
         <div class="menu-title">Zusätzlich</div>
         <button class="opt" class:sel={mapSettings.trails} onclick={toggleTrails}>
           <span class="check" aria-hidden="true">{mapSettings.trails ? '✓' : ''}</span>
-          <span><b>Wanderwege</b><small>Waymarked Trails – nur online</small></span>
+          <span><b>Markierte Routen (bunt)</b><small>Waymarked Trails mit Kürzeln – nur online</small></span>
         </button>
         <button class="opt" class:sel={mapSettings.pois} onclick={() => { mapSettings.pois = !mapSettings.pois; saveMapSettings(); }}>
           <span class="check" aria-hidden="true">{mapSettings.pois ? '✓' : ''}</span>
