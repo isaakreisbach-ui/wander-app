@@ -6,6 +6,7 @@
   import RecordOverlay from './RecordOverlay.svelte';
   import PoiOverlay from './PoiOverlay.svelte';
   import MarkedRoutesOverlay from './MarkedRoutesOverlay.svelte';
+  import PathsOverlay from './PathsOverlay.svelte';
   import PeakOverlay from './PeakOverlay.svelte';
   import FromHereOverlay from './FromHereOverlay.svelte';
   import FlyoverBar from './FlyoverBar.svelte';
@@ -121,6 +122,7 @@
 <div class="wrap">
   <div class="map" bind:this={container}></div>
 
+  <PathsOverlay />
   <MarkedRoutesOverlay />
   <PoiOverlay />
   <PeakOverlay />

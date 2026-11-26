@@ -89,7 +89,7 @@
 
 <div class="card">
   <h2>Version</h2>
-  <p>0.19 – iPhone-Feinschliff, Routen gestrichelt<br /><span class="muted">Stand: {built}</span></p>
+  <p>0.20 – Pfade schon ab Zoom 12<br /><span class="muted">Stand: {built}</span></p>
 </div>
 
 <style>
